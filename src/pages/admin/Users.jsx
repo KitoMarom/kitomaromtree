@@ -2,21 +2,51 @@ import { useState, useEffect, useContext } from 'react';
 import { supabase } from '../../supabaseClient';
 import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
+import { clearAdminDraft, readAdminDraft, writeAdminDraft } from '../../utils/adminDrafts';
+
+const USERS_INVITE_DRAFT_KEY = 'kito-admin-users-invite-draft-v1';
 
 export default function Users({ onNavigate }) {
   const { user: currentUser, role: currentRole } = useContext(AuthContext);
+  const [initialInviteDraft] = useState(() => readAdminDraft(USERS_INVITE_DRAFT_KEY));
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opLoading, setOpLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(
+    initialInviteDraft?.showInviteForm ? 'שוחזרה טיוטת משתמש שעדיין לא נשמרה.' : null
+  );
   const [error, setError] = useState(null);
 
   // Invitation Form State
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteFullName, setInviteFullName] = useState('');
-  const [inviteRole, setInviteRole] = useState('editor');
-  const [invitePassword, setInvitePassword] = useState(''); // If provided, creates user immediately
+  const [showInviteForm, setShowInviteForm] = useState(Boolean(initialInviteDraft?.showInviteForm));
+  const [inviteEmail, setInviteEmail] = useState(initialInviteDraft?.inviteEmail || '');
+  const [inviteFullName, setInviteFullName] = useState(initialInviteDraft?.inviteFullName || '');
+  const [inviteRole, setInviteRole] = useState(initialInviteDraft?.inviteRole || 'editor');
+  const [invitePassword, setInvitePassword] = useState(initialInviteDraft?.invitePassword || ''); // If provided, creates user immediately
+
+  useEffect(() => {
+    if (!showInviteForm) {
+      clearAdminDraft(USERS_INVITE_DRAFT_KEY);
+      return;
+    }
+
+    writeAdminDraft(USERS_INVITE_DRAFT_KEY, {
+      showInviteForm,
+      inviteEmail,
+      inviteFullName,
+      inviteRole,
+      invitePassword
+    });
+  }, [showInviteForm, inviteEmail, inviteFullName, inviteRole, invitePassword]);
+
+  function resetInviteForm() {
+    clearAdminDraft(USERS_INVITE_DRAFT_KEY);
+    setInviteEmail('');
+    setInviteFullName('');
+    setInviteRole('editor');
+    setInvitePassword('');
+    setShowInviteForm(false);
+  }
 
   async function loadUsers() {
     try {
@@ -112,11 +142,7 @@ export default function Users({ onNavigate }) {
       });
 
       setMessage(`הפעולה בוצעה בהצלחה! המשתמש ${inviteEmail} נוסף לרשימת הצוות.`);
-      setInviteEmail('');
-      setInviteFullName('');
-      setInviteRole('editor');
-      setInvitePassword('');
-      setShowInviteForm(false);
+      resetInviteForm();
       await loadUsers();
     } catch (err) {
       console.error('Failed to invite user:', err);
@@ -312,7 +338,7 @@ export default function Users({ onNavigate }) {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowInviteForm(false)} className="btn btn-text">ביטול</button>
+                <button type="button" onClick={resetInviteForm} className="btn btn-text">ביטול</button>
                 <button type="submit" disabled={opLoading} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {opLoading ? 'מוסיף משתמש...' : (
                     <>

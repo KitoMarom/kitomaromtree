@@ -36,7 +36,9 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  async function fetchProfile(currentUser) {
+  async function fetchProfile(currentUser, options = {}) {
+    const { showLoading = false } = options;
+
     if (!currentUser) {
       setRole(null);
       setIsActive(false);
@@ -44,7 +46,10 @@ function App() {
       return;
     }
 
-    setAuthLoading(true);
+    if (showLoading) {
+      setAuthLoading(true);
+    }
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -65,7 +70,9 @@ function App() {
     } catch (err) {
       console.error('Failed to query user profile:', err);
     } finally {
-      setAuthLoading(false);
+      if (showLoading) {
+        setAuthLoading(false);
+      }
     }
   }
 
@@ -74,14 +81,20 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
-      fetchProfile(currentUser);
+      fetchProfile(currentUser, { showLoading: true });
     });
 
     // 2. Auth State Listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
-      fetchProfile(currentUser);
+
+      if (event === 'TOKEN_REFRESHED') {
+        fetchProfile(currentUser, { showLoading: false });
+        return;
+      }
+
+      fetchProfile(currentUser, { showLoading: event === 'SIGNED_IN' || event === 'INITIAL_SESSION' });
     });
 
     return () => subscription.unsubscribe();

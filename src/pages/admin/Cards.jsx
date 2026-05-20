@@ -15,6 +15,9 @@ import {
 import { supabase } from '../../supabaseClient';
 import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
+import { clearAdminDraft, readAdminDraft, writeAdminDraft } from '../../utils/adminDrafts';
+
+const CARDS_DRAFT_KEY = 'kito-admin-cards-draft-v1';
 
 const EMPTY_FORM = {
   area_name: '',
@@ -100,18 +103,37 @@ function groupByActivity(cards) {
 
 export default function Cards({ onNavigate }) {
   const { user } = useContext(AuthContext);
+  const [initialDraft] = useState(() => readAdminDraft(CARDS_DRAFT_KEY));
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opLoading, setOpLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(
+    initialDraft?.showForm ? 'שוחזרה טיוטת פעילות/אזור שעדיין לא נשמרה.' : null
+  );
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editingCardId, setEditingCardId] = useState(null);
-  const [lockedActivityTitle, setLockedActivityTitle] = useState('');
-  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [showForm, setShowForm] = useState(Boolean(initialDraft?.showForm));
+  const [editingCardId, setEditingCardId] = useState(initialDraft?.editingCardId || null);
+  const [lockedActivityTitle, setLockedActivityTitle] = useState(initialDraft?.lockedActivityTitle || '');
+  const [formData, setFormData] = useState(() => (
+    initialDraft?.showForm ? { ...EMPTY_FORM, ...(initialDraft.formData || {}) } : EMPTY_FORM
+  ));
 
   const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
   const isAddingAreaToExistingActivity = !editingCardId && Boolean(lockedActivityTitle);
+
+  useEffect(() => {
+    if (!showForm) {
+      clearAdminDraft(CARDS_DRAFT_KEY);
+      return;
+    }
+
+    writeAdminDraft(CARDS_DRAFT_KEY, {
+      showForm,
+      editingCardId,
+      lockedActivityTitle,
+      formData
+    });
+  }, [showForm, editingCardId, lockedActivityTitle, formData]);
 
   async function loadCards() {
     try {
@@ -160,6 +182,7 @@ export default function Cards({ onNavigate }) {
   }, []);
 
   function resetForm() {
+    clearAdminDraft(CARDS_DRAFT_KEY);
     setFormData(EMPTY_FORM);
     setEditingCardId(null);
     setLockedActivityTitle('');

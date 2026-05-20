@@ -1,5 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
+function firstDefined(...values) {
+  return values.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
+}
+
+function readDefaultKeyFromJson(value) {
+  if (!value) return '';
+
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed?.default === 'string') return parsed.default;
+    return firstDefined(...Object.values(parsed || {}));
+  } catch {
+    return '';
+  }
+}
+
 export async function handler(event) {
   // Enable CORS
   const headers = {
@@ -22,16 +38,28 @@ export async function handler(event) {
     };
   }
 
-  // Get environment variables (supporting both standard and VITE_ prefixed variables)
-  const supabaseUrl = process.env.PUBLIC_SUPABASE_URL || process.env.VITE_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = firstDefined(
+    process.env.SUPABASE_URL,
+    process.env.PUBLIC_SUPABASE_URL,
+    process.env.VITE_PUBLIC_SUPABASE_URL
+  );
+  const supabaseServiceKey = firstDefined(
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    readDefaultKeyFromJson(process.env.SUPABASE_SECRET_KEYS)
+  );
+  const missingVariables = [
+    !supabaseUrl ? 'SUPABASE_URL / PUBLIC_SUPABASE_URL / VITE_PUBLIC_SUPABASE_URL' : null,
+    !supabaseServiceKey ? 'SUPABASE_SERVICE_ROLE_KEY' : null
+  ].filter(Boolean);
 
-  if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+  if (missingVariables.length > 0) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Missing Supabase configuration env variables' })
+      body: JSON.stringify({
+        error: `חסרה הגדרת Supabase בצד השרת: ${missingVariables.join(', ')}. יצירת משתמשים מחייבת Service Role Key ב-Netlify Functions.`,
+        missingVariables
+      })
     };
   }
 
@@ -47,16 +75,13 @@ export async function handler(event) {
   const token = authHeader.split(' ')[1];
 
   // Initialize clients
-  const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false }
-  });
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { persistSession: false }
   });
 
   try {
     // 1. Verify User Token
-    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
       return {
         statusCode: 401,

@@ -2,26 +2,33 @@ import { useState, useEffect, useContext } from 'react';
 import { supabase } from '../../supabaseClient';
 import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
+import { clearAdminDraft, readAdminDraft, writeAdminDraft } from '../../utils/adminDrafts';
+
+const SETTINGS_DRAFT_KEY = 'kito-admin-settings-draft-v1';
+
+const EMPTY_SETTINGS_FORM = {
+  page_title: '',
+  page_subtitle: '',
+  intro_text: '',
+  logo_url: '',
+  hero_image_url: '',
+  company_name: '',
+  office_address: '',
+  po_box: '',
+  contact_phone: '',
+  contact_fax: '',
+  footer_text: ''
+};
 
 export default function Settings({ onNavigate }) {
   const { user } = useContext(AuthContext);
-  const [formData, setFormData] = useState({
-    page_title: '',
-    page_subtitle: '',
-    intro_text: '',
-    logo_url: '',
-    hero_image_url: '',
-    company_name: '',
-    office_address: '',
-    po_box: '',
-    contact_phone: '',
-    contact_fax: '',
-    footer_text: ''
-  });
+  const [formData, setFormData] = useState(EMPTY_SETTINGS_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [settingsDraftDirty, setSettingsDraftDirty] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
@@ -36,7 +43,7 @@ export default function Settings({ onNavigate }) {
         if (settingsError) throw settingsError;
 
         if (data) {
-          setFormData({
+          const databaseFormData = {
             page_title: data.page_title || '',
             page_subtitle: data.page_subtitle || '',
             intro_text: data.intro_text || '',
@@ -48,18 +55,37 @@ export default function Settings({ onNavigate }) {
             contact_phone: data.contact_phone || '09-8344840',
             contact_fax: data.contact_fax || '09-8344841',
             footer_text: data.footer_text || ''
-          });
+          };
+          const draft = readAdminDraft(SETTINGS_DRAFT_KEY);
+
+          if (draft?.formData) {
+            setFormData({ ...databaseFormData, ...draft.formData });
+            setMessage('שוחזרה טיוטת הגדרות שעדיין לא נשמרה.');
+          } else {
+            setFormData(databaseFormData);
+          }
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
         setError('אירעה שגיאה בטעינת הגדרות העמוד.');
       } finally {
+        setSettingsLoaded(true);
         setLoading(false);
       }
     }
 
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded || !settingsDraftDirty) return;
+    writeAdminDraft(SETTINGS_DRAFT_KEY, { formData });
+  }, [settingsLoaded, settingsDraftDirty, formData]);
+
+  function updateFormData(patch) {
+    setSettingsDraftDirty(true);
+    setFormData((currentFormData) => ({ ...currentFormData, ...patch }));
+  }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -88,6 +114,8 @@ export default function Settings({ onNavigate }) {
       });
 
       setMessage('הגדרות העמוד עודכנו בהצלחה ופורסמו להורים! ✨');
+      clearAdminDraft(SETTINGS_DRAFT_KEY);
+      setSettingsDraftDirty(false);
     } catch (err) {
       console.error('Failed to save settings:', err);
       setError(err.message || 'אירעה שגיאה בשמירת השינויים.');
@@ -171,7 +199,7 @@ export default function Settings({ onNavigate }) {
                 required 
                 className="form-control"
                 value={formData.page_title}
-                onChange={e => setFormData({ ...formData, page_title: e.target.value })}
+                onChange={e => updateFormData({ page_title: e.target.value })}
                 placeholder="לדוגמה: צהרונים וקייטנות תשפ''ו - קיטו מרום"
               />
             </div>
@@ -183,7 +211,7 @@ export default function Settings({ onNavigate }) {
                 required 
                 className="form-control"
                 value={formData.page_subtitle}
-                onChange={e => setFormData({ ...formData, page_subtitle: e.target.value })}
+                onChange={e => updateFormData({ page_subtitle: e.target.value })}
                 placeholder="לדוגמה: בחרו את האיזור המבוקש כדי להירשם"
               />
             </div>
@@ -194,7 +222,7 @@ export default function Settings({ onNavigate }) {
                 className="form-control" 
                 rows="3"
                 value={formData.intro_text}
-                onChange={e => setFormData({ ...formData, intro_text: e.target.value })}
+                onChange={e => updateFormData({ intro_text: e.target.value })}
                 placeholder="טקסט הסבר קצר על פעילות החברה שיוצג בראש העמוד..."
                 style={{ resize: 'vertical', minHeight: '80px' }}
               />
@@ -211,7 +239,7 @@ export default function Settings({ onNavigate }) {
                   type="url" 
                   className="form-control"
                   value={formData.logo_url}
-                  onChange={e => setFormData({ ...formData, logo_url: e.target.value })}
+                  onChange={e => updateFormData({ logo_url: e.target.value })}
                   placeholder="https://example.com/logo.png"
                 />
               </div>
@@ -222,7 +250,7 @@ export default function Settings({ onNavigate }) {
                   type="url" 
                   className="form-control"
                   value={formData.hero_image_url}
-                  onChange={e => setFormData({ ...formData, hero_image_url: e.target.value })}
+                  onChange={e => updateFormData({ hero_image_url: e.target.value })}
                   placeholder="https://example.com/hero.jpg"
                 />
               </div>
@@ -240,7 +268,7 @@ export default function Settings({ onNavigate }) {
                   required
                   className="form-control"
                   value={formData.company_name}
-                  onChange={e => setFormData({ ...formData, company_name: e.target.value })}
+                  onChange={e => updateFormData({ company_name: e.target.value })}
                   placeholder={"קיטו מרום הדרכה טכנולוגית בע\"מ"}
                 />
               </div>
@@ -252,7 +280,7 @@ export default function Settings({ onNavigate }) {
                   required
                   className="form-control"
                   value={formData.office_address}
-                  onChange={e => setFormData({ ...formData, office_address: e.target.value })}
+                  onChange={e => updateFormData({ office_address: e.target.value })}
                   placeholder="מתחם INTRO, רחוב האורזים 2 נתניה."
                 />
               </div>
@@ -266,7 +294,7 @@ export default function Settings({ onNavigate }) {
                   required
                   className="form-control"
                   value={formData.po_box}
-                  onChange={e => setFormData({ ...formData, po_box: e.target.value })}
+                  onChange={e => updateFormData({ po_box: e.target.value })}
                   placeholder="ת.ד. 2356, נתניה 42120"
                 />
               </div>
@@ -279,7 +307,7 @@ export default function Settings({ onNavigate }) {
                     required
                     className="form-control"
                     value={formData.contact_phone}
-                    onChange={e => setFormData({ ...formData, contact_phone: e.target.value })}
+                    onChange={e => updateFormData({ contact_phone: e.target.value })}
                     placeholder="09-8344840"
                   />
                 </div>
@@ -291,7 +319,7 @@ export default function Settings({ onNavigate }) {
                     required
                     className="form-control"
                     value={formData.contact_fax}
-                    onChange={e => setFormData({ ...formData, contact_fax: e.target.value })}
+                    onChange={e => updateFormData({ contact_fax: e.target.value })}
                     placeholder="09-8344841"
                   />
                 </div>
@@ -305,7 +333,7 @@ export default function Settings({ onNavigate }) {
                 required 
                 className="form-control"
                 value={formData.footer_text}
-                onChange={e => setFormData({ ...formData, footer_text: e.target.value })}
+                onChange={e => updateFormData({ footer_text: e.target.value })}
                 placeholder="כל הזכויות שמורות לקיטו מרום © 2026"
               />
             </div>
