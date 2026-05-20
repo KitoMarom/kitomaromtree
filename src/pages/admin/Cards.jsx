@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle,
@@ -18,6 +18,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { clearAdminDraft, readAdminDraft, writeAdminDraft } from '../../utils/adminDrafts';
 
 const CARDS_DRAFT_KEY = 'kito-admin-cards-draft-v1';
+const PROJECT_DRAFT_KEY = 'kito-admin-project-draft-v1';
 
 const EMPTY_FORM = {
   area_name: '',
@@ -27,6 +28,11 @@ const EMPTY_FORM = {
   sort_order: 0,
   is_active: true,
   education_level: 'school'
+};
+
+const EMPTY_PROJECT_FORM = {
+  title: '',
+  areaIds: []
 };
 
 const audienceLabels = {
@@ -62,7 +68,7 @@ function groupByActivity(cards) {
   const groups = new Map();
 
   cards.forEach((card) => {
-    const title = (card.display_title || 'פעילות הרשמה').trim();
+    const title = (card.display_title || 'פרויקט הרשמה').trim();
     const sortOrder = Number(card.sort_order) || 0;
 
     if (!groups.has(title)) {
@@ -104,11 +110,14 @@ function groupByActivity(cards) {
 export default function Cards({ onNavigate }) {
   const { user } = useContext(AuthContext);
   const [initialDraft] = useState(() => readAdminDraft(CARDS_DRAFT_KEY));
+  const [initialProjectDraft] = useState(() => readAdminDraft(PROJECT_DRAFT_KEY));
+  const areaFormRef = useRef(null);
+  const projectFormRef = useRef(null);
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [opLoading, setOpLoading] = useState(false);
   const [message, setMessage] = useState(
-    initialDraft?.showForm ? 'שוחזרה טיוטת פעילות/אזור שעדיין לא נשמרה.' : null
+    initialDraft?.showForm || initialProjectDraft?.showProjectForm ? 'שוחזרה טיוטה שעדיין לא נשמרה.' : null
   );
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(Boolean(initialDraft?.showForm));
@@ -116,6 +125,13 @@ export default function Cards({ onNavigate }) {
   const [lockedActivityTitle, setLockedActivityTitle] = useState(initialDraft?.lockedActivityTitle || '');
   const [formData, setFormData] = useState(() => (
     initialDraft?.showForm ? { ...EMPTY_FORM, ...(initialDraft.formData || {}) } : EMPTY_FORM
+  ));
+  const [showProjectForm, setShowProjectForm] = useState(Boolean(initialProjectDraft?.showProjectForm));
+  const [editingProjectTitle, setEditingProjectTitle] = useState(initialProjectDraft?.editingProjectTitle || '');
+  const [projectFormData, setProjectFormData] = useState(() => (
+    initialProjectDraft?.showProjectForm
+      ? { ...EMPTY_PROJECT_FORM, ...(initialProjectDraft.projectFormData || {}) }
+      : EMPTY_PROJECT_FORM
   ));
 
   const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
@@ -135,6 +151,19 @@ export default function Cards({ onNavigate }) {
     });
   }, [showForm, editingCardId, lockedActivityTitle, formData]);
 
+  useEffect(() => {
+    if (!showProjectForm) {
+      clearAdminDraft(PROJECT_DRAFT_KEY);
+      return;
+    }
+
+    writeAdminDraft(PROJECT_DRAFT_KEY, {
+      showProjectForm,
+      editingProjectTitle,
+      projectFormData
+    });
+  }, [showProjectForm, editingProjectTitle, projectFormData]);
+
   async function loadCards() {
     try {
       setLoading(true);
@@ -147,7 +176,7 @@ export default function Cards({ onNavigate }) {
       setCards(data || []);
     } catch (err) {
       console.error('Failed to load registrations:', err);
-      setError('אירעה שגיאה בטעינת הפעילויות והאזורים.');
+      setError('אירעה שגיאה בטעינת הפרויקטים והאזורים.');
     } finally {
       setLoading(false);
     }
@@ -168,7 +197,7 @@ export default function Cards({ onNavigate }) {
         if (isMounted) setCards(data || []);
       } catch (err) {
         console.error('Failed to load registrations:', err);
-        if (isMounted) setError('אירעה שגיאה בטעינת הפעילויות והאזורים.');
+        if (isMounted) setError('אירעה שגיאה בטעינת הפרויקטים והאזורים.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -181,6 +210,12 @@ export default function Cards({ onNavigate }) {
     };
   }, []);
 
+  function scrollToForm(ref) {
+    window.setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }
+
   function resetForm() {
     clearAdminDraft(CARDS_DRAFT_KEY);
     setFormData(EMPTY_FORM);
@@ -189,7 +224,15 @@ export default function Cards({ onNavigate }) {
     setShowForm(false);
   }
 
+  function resetProjectForm() {
+    clearAdminDraft(PROJECT_DRAFT_KEY);
+    setProjectFormData(EMPTY_PROJECT_FORM);
+    setEditingProjectTitle('');
+    setShowProjectForm(false);
+  }
+
   function handleEditClick(card) {
+    resetProjectForm();
     setEditingCardId(card.id);
     setLockedActivityTitle('');
     setFormData({
@@ -202,17 +245,20 @@ export default function Cards({ onNavigate }) {
       education_level: card.education_level || 'school'
     });
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToForm(areaFormRef);
   }
 
   function handleCreateActivityClick() {
+    resetProjectForm();
     setEditingCardId(null);
     setLockedActivityTitle('');
     setFormData(EMPTY_FORM);
     setShowForm(true);
+    scrollToForm(areaFormRef);
   }
 
   function handleAddAreaToActivityClick(activity) {
+    resetProjectForm();
     setEditingCardId(null);
     setLockedActivityTitle(activity.title);
     setFormData({
@@ -221,7 +267,18 @@ export default function Cards({ onNavigate }) {
       sort_order: activity.sortOrder
     });
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToForm(areaFormRef);
+  }
+
+  function handleEditProjectClick(activity) {
+    resetForm();
+    setEditingProjectTitle(activity.title);
+    setProjectFormData({
+      title: activity.title,
+      areaIds: activity.areas.map((area) => area.id)
+    });
+    setShowProjectForm(true);
+    scrollToForm(projectFormRef);
   }
 
   function buildPayload() {
@@ -234,6 +291,58 @@ export default function Cards({ onNavigate }) {
       is_active: formData.is_active,
       education_level: formData.education_level
     };
+  }
+
+  async function handleProjectSubmit(event) {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    const normalizedTitle = projectFormData.title.trim();
+
+    if (!normalizedTitle) {
+      setError('שם הפרויקט לא יכול להיות ריק.');
+      return;
+    }
+
+    if (projectFormData.areaIds.length === 0) {
+      setError('לא נמצאו אזורים לעדכון בפרויקט הזה.');
+      return;
+    }
+
+    if (normalizedTitle === editingProjectTitle) {
+      resetProjectForm();
+      return;
+    }
+
+    setOpLoading(true);
+
+    try {
+      const { error: updateError } = await supabase
+        .from('registration_cards')
+        .update({
+          display_title: normalizedTitle,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', projectFormData.areaIds);
+
+      if (updateError) throw updateError;
+
+      await writeAuditLog(
+        'UPDATE_PROJECT',
+        projectFormData.areaIds[0],
+        `Renamed project ${editingProjectTitle} to ${normalizedTitle}`
+      );
+
+      setMessage(`הפרויקט "${editingProjectTitle}" עודכן ל-"${normalizedTitle}".`);
+      resetProjectForm();
+      await loadCards();
+    } catch (err) {
+      console.error('Project update failed:', err);
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשמירת הפרויקט.'));
+    } finally {
+      setOpLoading(false);
+    }
   }
 
   async function writeAuditLog(action, entityId, details) {
@@ -290,14 +399,14 @@ export default function Cards({ onNavigate }) {
           `Created ${payload.area_name} for activity ${payload.display_title}`
         );
 
-        setMessage('האזור נוסף לפעילות בהצלחה.');
+        setMessage('האזור נוסף לפרויקט בהצלחה.');
       }
 
       resetForm();
       await loadCards();
     } catch (err) {
       console.error('Operation failed:', err);
-      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשמירת הפעילות.'));
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשמירת הפרויקט.'));
     } finally {
       setOpLoading(false);
     }
@@ -377,7 +486,7 @@ export default function Cards({ onNavigate }) {
   }
 
   async function handleDuplicateActivity(activity) {
-    const activityTitle = window.prompt('שם הפעילות המשוכפלת:', `${activity.title} - עותק`);
+    const activityTitle = window.prompt('שם הפרויקט המשוכפל:', `${activity.title} - עותק`);
     const normalizedActivityTitle = activityTitle?.trim();
 
     if (!normalizedActivityTitle) return;
@@ -410,11 +519,11 @@ export default function Cards({ onNavigate }) {
         `Duplicated activity ${activity.title} as ${normalizedActivityTitle} with ${activity.areas.length} areas`
       );
 
-      setMessage(`הפעילות "${activity.title}" שוכפלה כ-"${normalizedActivityTitle}" וכל האזורים נשמרו ככבויים לעריכה.`);
+      setMessage(`הפרויקט "${activity.title}" שוכפל כ-"${normalizedActivityTitle}" וכל האזורים נשמרו ככבויים לעריכה.`);
       await loadCards();
     } catch (err) {
       console.error('Duplicate activity failed:', err);
-      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול הפעילות.'));
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול הפרויקט.'));
     } finally {
       setOpLoading(false);
     }
@@ -422,7 +531,7 @@ export default function Cards({ onNavigate }) {
 
   async function handleDeleteArea(card) {
     const approved = window.confirm(
-      `למחוק את האזור "${card.area_name}" מתוך הפעילות "${card.display_title}"? הפעולה לא ניתנת לביטול.`
+      `למחוק את האזור "${card.area_name}" מתוך הפרויקט "${card.display_title}"? הפעולה לא ניתנת לביטול.`
     );
 
     if (!approved) return;
@@ -449,7 +558,7 @@ export default function Cards({ onNavigate }) {
         resetForm();
       }
 
-      setMessage(`האזור "${card.area_name}" נמחק מהפעילות.`);
+      setMessage(`האזור "${card.area_name}" נמחק מהפרויקט.`);
       await loadCards();
     } catch (err) {
       console.error('Delete area failed:', err);
@@ -461,7 +570,7 @@ export default function Cards({ onNavigate }) {
 
   async function handleDeleteActivity(activity) {
     const approved = window.confirm(
-      `למחוק את הפעילות "${activity.title}" ואת כל ${activity.areas.length} האזורים שבתוכה? הפעולה לא ניתנת לביטול.`
+      `למחוק את הפרויקט "${activity.title}" ואת כל ${activity.areas.length} האזורים שבתוכו? הפעולה לא ניתנת לביטול.`
     );
 
     if (!approved) return;
@@ -490,11 +599,11 @@ export default function Cards({ onNavigate }) {
         resetForm();
       }
 
-      setMessage(`הפעילות "${activity.title}" נמחקה יחד עם כל האזורים שלה.`);
+      setMessage(`הפרויקט "${activity.title}" נמחק יחד עם כל האזורים שלו.`);
       await loadCards();
     } catch (err) {
       console.error('Delete activity failed:', err);
-      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת הפעילות.'));
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת הפרויקט.'));
     } finally {
       setOpLoading(false);
     }
@@ -506,21 +615,21 @@ export default function Cards({ onNavigate }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>
-              ניהול פעילויות ואזורים
+              ניהול פרויקטים ואזורים
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
-              כל פעילות יכולה להכיל כמה אזורים. לכל אזור מגדירים קישור הרשמה, קהל יעד ותיאור מלא.
+              כל פרויקט יכול להכיל כמה אזורים. לכל אזור מגדירים קישור הרשמה, קהל יעד ותיאור מלא.
             </p>
           </div>
 
-          {!showForm && (
+          {!showForm && !showProjectForm && (
             <button
               onClick={handleCreateActivityClick}
               className="btn btn-primary"
               style={{ fontWeight: '700' }}
             >
               <Plus size={18} />
-              הוספת פעילות חדשה
+              הוספת פרויקט חדש
             </button>
           )}
         </div>
@@ -559,23 +668,60 @@ export default function Cards({ onNavigate }) {
           </div>
         )}
 
+        {showProjectForm && (
+          <form
+            ref={projectFormRef}
+            onSubmit={handleProjectSubmit}
+            className="card"
+            style={{ display: 'flex', flexDirection: 'column', gap: '18px', backgroundColor: '#ffffff' }}
+          >
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+              עריכת פרויקט
+            </h2>
+
+            <div className="form-group">
+              <label className="form-label">שם הפרויקט</label>
+              <input
+                type="text"
+                required
+                className="form-control"
+                placeholder={'לדוגמה: הרשמה לקייטנת קיץ תשפ"ו'}
+                value={projectFormData.title}
+                onChange={(event) => setProjectFormData({ ...projectFormData, title: event.target.value })}
+              />
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                שינוי שם הפרויקט יעדכן יחד את כל {projectFormData.areaIds.length} האזורים שבתוכו.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={resetProjectForm} className="btn btn-text">ביטול</button>
+              <button type="submit" disabled={opLoading} className="btn btn-primary">
+                <Save size={18} />
+                {opLoading ? 'שומר...' : 'שמירת פרויקט'}
+              </button>
+            </div>
+          </form>
+        )}
+
         {showForm && (
           <form
+            ref={areaFormRef}
             onSubmit={handleSubmit}
             className="card"
             style={{ display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#ffffff' }}
           >
             <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
               {editingCardId
-                ? 'עריכת אזור בפעילות'
+                ? 'עריכת אזור בפרויקט'
                 : isAddingAreaToExistingActivity
-                  ? 'הוספת אזור לפעילות קיימת'
-                  : 'הוספת פעילות חדשה'}
+                  ? 'הוספת אזור לפרויקט קיים'
+                  : 'הוספת פרויקט חדש'}
             </h2>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">שם הפעילות</label>
+                <label className="form-label">שם הפרויקט</label>
                 <input
                   type="text"
                   required
@@ -591,7 +737,7 @@ export default function Cards({ onNavigate }) {
                 />
                 {isAddingAreaToExistingActivity && (
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    שם הפעילות נעול כשמוסיפים אזור לפעילות קיימת.
+                    שם הפרויקט נעול כשמוסיפים אזור לפרויקט קיים.
                   </span>
                 )}
               </div>
@@ -680,14 +826,14 @@ export default function Cards({ onNavigate }) {
         )}
 
         {loading ? (
-          <div>טוען פעילויות ואזורים...</div>
+          <div>טוען פרויקטים ואזורים...</div>
         ) : cards.length === 0 ? (
           <div className="card text-center" style={{ padding: '50px 20px', backgroundColor: '#ffffff' }}>
             <h2 style={{ fontSize: '20px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-              טרם הוגדרו פעילויות.
+              טרם הוגדרו פרויקטים.
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>
-              הוסיפו פעילות ראשונה ואז צרפו אליה את האזורים הרלוונטיים.
+              הוסיפו פרויקט ראשון ואז צרפו אליו את האזורים הרלוונטיים.
             </p>
           </div>
         ) : (
@@ -712,7 +858,7 @@ export default function Cards({ onNavigate }) {
                       {activity.title}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-                      {activity.areas.length} אזורים בפעילות
+                      {activity.areas.length} אזורים בפרויקט
                     </p>
                   </div>
 
@@ -720,17 +866,26 @@ export default function Cards({ onNavigate }) {
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
+                      onClick={() => handleEditProjectClick(activity)}
+                    >
+                      <Edit3 size={15} />
+                      עריכת פרויקט
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
                       onClick={() => handleAddAreaToActivityClick(activity)}
                     >
                       <Plus size={15} />
-                      הוספת אזור לפעילות
+                      הוספת אזור לפרויקט
                     </button>
 
                     <button
                       type="button"
                       className="admin-icon-button"
-                      title="שכפול פעילות"
-                      aria-label={`שכפול פעילות ${activity.title}`}
+                      title="שכפול פרויקט"
+                      aria-label={`שכפול פרויקט ${activity.title}`}
                       disabled={opLoading}
                       onClick={() => handleDuplicateActivity(activity)}
                     >
@@ -740,8 +895,8 @@ export default function Cards({ onNavigate }) {
                     <button
                       type="button"
                       className="admin-icon-button admin-icon-button-danger"
-                      title="מחיקת פעילות"
-                      aria-label={`מחיקת פעילות ${activity.title}`}
+                      title="מחיקת פרויקט"
+                      aria-label={`מחיקת פרויקט ${activity.title}`}
                       disabled={opLoading}
                       onClick={() => handleDeleteActivity(activity)}
                     >

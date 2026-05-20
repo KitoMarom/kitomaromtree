@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import Header from '../components/Header';
 
@@ -29,7 +30,7 @@ function groupByActivity(cards) {
   const groups = new Map();
 
   cards.forEach((card) => {
-    const title = (card.display_title || 'פעילות הרשמה').trim();
+    const title = (card.display_title || 'פרויקט הרשמה').trim();
     const sortOrder = Number(card.sort_order) || 0;
 
     if (!groups.has(title)) {
@@ -182,15 +183,19 @@ export default function PublicPage({ registrationId, onNavigate }) {
               <a
                 href="/"
                 onClick={(event) => navigate(event, '/')}
+                className="btn btn-outline btn-sm"
                 style={{
                   display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  width: 'auto',
                   marginBottom: '18px',
                   fontSize: '15px',
-                  fontWeight: '700',
-                  color: 'var(--primary-purple)'
+                  fontWeight: '800'
                 }}
               >
-                חזרה לכל הפעילויות
+                <ArrowRight size={17} />
+                חזרה לכל הפרויקטים
               </a>
 
               <article className="card" style={{
@@ -297,7 +302,7 @@ export default function PublicPage({ registrationId, onNavigate }) {
               {activityGroups.length === 0 ? (
                 <div className="card text-center" style={{ padding: '38px 22px', backgroundColor: '#ffffff' }}>
                   <p style={{ color: 'var(--text-muted)', fontSize: '18px', fontWeight: '700' }}>
-                    אין כרגע הרשמות פעילות.
+                    אין כרגע הרשמות פתוחות.
                   </p>
                 </div>
               ) : (
@@ -324,25 +329,12 @@ export default function PublicPage({ registrationId, onNavigate }) {
                     </h2>
 
                     <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                      <span style={{
-                        display: 'block',
-                        fontSize: '17px',
-                        fontWeight: '800',
-                        color: 'var(--primary-dark)',
-                        marginBottom: '10px'
-                      }}>
-                        אזורים
-                      </span>
-
                       <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: 'var(--radius-md)',
-                        overflow: 'hidden',
-                        backgroundColor: '#ffffff'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+                        gap: '12px'
                       }}>
-                        {activity.areas.map((area, index) => (
+                        {activity.areas.map((area) => (
                           <a
                             key={area.id}
                             href={`/registration/${area.id}`}
@@ -351,15 +343,17 @@ export default function PublicPage({ registrationId, onNavigate }) {
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'flex-start',
-                              minHeight: '54px',
-                              padding: '12px 16px',
-                              borderTop: index === 0 ? 'none' : '1px solid var(--border-color)',
-                              backgroundColor: '#ffffff',
+                              justifyContent: 'center',
+                              minHeight: '66px',
+                              padding: '14px 16px',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: 'var(--radius-md)',
+                              backgroundColor: 'var(--primary-light)',
                               color: 'var(--primary-dark)',
                               fontSize: '19px',
                               fontWeight: '800',
-                              lineHeight: '1.2'
+                              lineHeight: '1.2',
+                              textAlign: 'center'
                             }}
                           >
                             <span>{area.area_name}</span>

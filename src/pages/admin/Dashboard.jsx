@@ -123,7 +123,7 @@ export default function Dashboard({ onNavigate }) {
                 </svg>
               </div>
               <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>הגדרות עמוד הרשמה</h4>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>עריכת כותרות, פרטי לוגו, טלפון ואימייל ליצירת קשר עם המשרד.</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>עריכת כותרת העמוד והלוגו שמוצגים להורים.</p>
             </div>
 
             <div 
@@ -146,8 +146,8 @@ export default function Dashboard({ onNavigate }) {
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
               </div>
-              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול קישורי אזורים</h4>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספה, עריכה, סידור והפעלה/כיבוי של קישורי ההרשמה לפי ערים ואזורים.</p>
+              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול פרויקטים ואזורים</h4>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספה, עריכה, סידור והפעלה/כיבוי של פרויקטים וקישורי הרשמה לפי אזורים.</p>
             </div>
 
             {role === 'admin' && (
