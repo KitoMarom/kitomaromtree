@@ -10,6 +10,9 @@ export default function RegistrationCard({ card }) {
   const educationLevelLabel = education_level === 'kindergarten' ? 'גני ילדים' : 'בתי ספר';
   const programTypeLabel = program_type === 'camp' ? 'קייטנות' : 'צהרונים';
 
+  // Parse areas list
+  const areas = area_name ? area_name.split(/[,/]/).map(s => s.trim()).filter(Boolean) : [];
+
   return (
     <div className="card card-hover" style={{
       display: 'flex',
@@ -22,59 +25,10 @@ export default function RegistrationCard({ card }) {
       borderRadius: 'var(--radius-md)',
       position: 'relative'
     }}>
-      {/* Area Badges floating on top of image */}
-      <div style={{
-        position: 'absolute',
-        top: '16px',
-        right: '16px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'flex-end',
-        gap: '6px',
-        zIndex: 2,
-        maxWidth: 'calc(100% - 32px)',
-        direction: 'rtl'
-      }}>
-        {(() => {
-          const areas = area_name ? area_name.split(/[,/]/).map(s => s.trim()).filter(Boolean) : [];
-          const maxBadges = 2;
-          const displayedAreas = areas.slice(0, maxBadges);
-          const extraCount = areas.length - maxBadges;
-          
-          return (
-            <>
-              {displayedAreas.map((area, idx) => (
-                <span key={idx} className="badge badge-primary" style={{
-                  fontSize: '13px',
-                  padding: '4px 10px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                  fontWeight: '700',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {area}
-                </span>
-              ))}
-              {extraCount > 0 && (
-                <span className="badge" style={{
-                  fontSize: '13px',
-                  padding: '4px 10px',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                  fontWeight: '700',
-                  backgroundColor: 'var(--primary-dark)',
-                  color: 'white',
-                  whiteSpace: 'nowrap'
-                }}>
-                  +{extraCount} רשויות
-                </span>
-              )}
-            </>
-          );
-        })()}
-      </div>
 
       {/* Card Visual Header */}
       <div style={{
-        height: '160px',
+        height: '150px',
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: 'var(--primary-light)'
@@ -94,17 +48,17 @@ export default function RegistrationCard({ card }) {
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to top, rgba(72, 57, 112, 0.4) 0%, transparent 100%)'
+          background: 'linear-gradient(to top, rgba(72, 57, 112, 0.5) 0%, transparent 60%)'
         }}></div>
       </div>
 
       {/* Card Body */}
       <div style={{
-        padding: '24px',
+        padding: '20px 24px 24px',
         display: 'flex',
         flexDirection: 'column',
         flexGrow: 1,
-        gap: '12px'
+        gap: '10px'
       }}>
         <h3 style={{
           fontSize: '19px',
@@ -119,15 +73,66 @@ export default function RegistrationCard({ card }) {
           <p style={{
             fontSize: '14px',
             color: 'var(--text-muted)',
-            flexGrow: 1,
             lineHeight: '1.5'
           }}>
             {description}
           </p>
         )}
 
+        {/* Areas Section - full list, no truncation */}
+        {areas.length > 0 && (
+          <div style={{
+            borderTop: '1px solid #EEF0F4',
+            paddingTop: '12px',
+            marginTop: '2px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginBottom: '8px'
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'var(--primary-purple)',
+                letterSpacing: '0.02em',
+                textTransform: 'uppercase'
+              }}>
+                רלוונטי לרשויות
+              </span>
+            </div>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '6px',
+              direction: 'rtl'
+            }}>
+              {areas.map((area, idx) => (
+                <span key={idx} style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--primary-dark)',
+                  backgroundColor: 'rgba(72, 57, 112, 0.08)',
+                  border: '1px solid rgba(72, 57, 112, 0.18)',
+                  borderRadius: '6px',
+                  padding: '3px 10px',
+                  whiteSpace: 'nowrap',
+                  lineHeight: '1.6'
+                }}>
+                  {area}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Categories Badges */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '8px', marginBottom: '4px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '6px' }}>
           <span style={{
             fontSize: '12px',
             fontWeight: '600',
@@ -159,7 +164,7 @@ export default function RegistrationCard({ card }) {
           rel="noopener noreferrer" 
           className="btn btn-primary w-full"
           style={{
-            marginTop: '8px',
+            marginTop: '4px',
             padding: '12px',
             fontSize: '15px',
             fontWeight: '700',
