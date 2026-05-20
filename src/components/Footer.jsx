@@ -2,6 +2,11 @@ import React from 'react';
 
 export default function Footer({ settings }) {
   const footerText = settings?.footer_text || 'כל הזכויות שמורות לקיטו מרום © 2026';
+  const companyName = settings?.company_name || 'קיטו מרום הדרכה טכנולוגית בע"מ';
+  const officeAddress = settings?.office_address || 'מתחם INTRO, רחוב האורזים 2 נתניה.';
+  const poBox = settings?.po_box || 'ת.ד. 2356, נתניה 42120';
+  const contactPhone = settings?.contact_phone || '09-8344840';
+  const contactFax = settings?.contact_fax || '09-8344841';
 
   return (
     <footer style={{
@@ -30,11 +35,11 @@ export default function Footer({ settings }) {
           <div>
             <h3 style={{ color: 'white', marginBottom: '16px', fontSize: '20px' }}>פרטי התקשרות</h3>
             <ul style={{ listStyle: 'none', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px', padding: 0 }}>
-              <li style={{ color: 'white', fontWeight: 'bold' }}>קיטו מרום הדרכה טכנולוגית בע"מ</li>
-              <li>מתחם INTRO, רחוב האורזים 2 נתניה.</li>
-              <li>מען למכתבים: ת.ד. 2356, נתניה 42120</li>
-              <li>טלפון: <a href="tel:09-8344840" style={{ color: 'var(--primary-light)' }}>09-8344840</a></li>
-              <li>פקס: 09-8344841</li>
+              <li style={{ color: 'white', fontWeight: 'bold' }}>{companyName}</li>
+              <li>{officeAddress}</li>
+              <li>מען למכתבים: {poBox}</li>
+              <li>טלפון: <a href={`tel:${contactPhone}`} style={{ color: 'var(--primary-light)' }}>{contactPhone}</a></li>
+              <li>פקס: {contactFax}</li>
             </ul>
           </div>
 

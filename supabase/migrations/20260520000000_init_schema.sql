@@ -19,8 +19,11 @@ CREATE TABLE IF NOT EXISTS public.page_settings (
     intro_text text,
     logo_url text,
     hero_image_url text,
-    contact_phone text,
-    contact_email text,
+    company_name text NOT NULL DEFAULT 'קיטו מרום הדרכה טכנולוגית בע"מ',
+    office_address text NOT NULL DEFAULT 'מתחם INTRO, רחוב האורזים 2 נתניה.',
+    po_box text NOT NULL DEFAULT 'ת.ד. 2356, נתניה 42120',
+    contact_phone text NOT NULL DEFAULT '09-8344840',
+    contact_fax text NOT NULL DEFAULT '09-8344841',
     footer_text text NOT NULL DEFAULT 'כל הזכויות שמורות לקיטו מרום © 2026',
     updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -51,15 +54,18 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 );
 
 -- Insert Default Page Settings Row
-INSERT INTO public.page_settings (id, page_title, page_subtitle, intro_text, logo_url, contact_phone, contact_email, footer_text)
+INSERT INTO public.page_settings (id, page_title, page_subtitle, intro_text, logo_url, company_name, office_address, po_box, contact_phone, contact_fax, footer_text)
 VALUES (
     '00000000-0000-0000-0000-000000000000'::uuid,
     'צהרונים וקייטנות תשפ"ו - קיטו מרום',
     'ההרשמה לצהרוני גני הילדים ובתי הספר החלה! בחרו את אזור המגורים שלכם לקבלת קישור הרשמה ישיר',
     'חברת קיטו מרום מפעילה תוכניות חינוכיות, קייטנות וצהרונים ברחבי הארץ בדגש על מצוינות, בטיחות והנאה לילדים.',
     'https://www.kitomarom.co.il/assets/images/logo.png',
+    'קיטו מרום הדרכה טכנולוגית בע"מ',
+    'מתחם INTRO, רחוב האורזים 2 נתניה.',
+    'ת.ד. 2356, נתניה 42120',
     '09-8344840',
-    'office@kitomarom.co.il',
+    '09-8344841',
     'כל הזכויות שמורות לקיטו מרום © 2026'
 ) ON CONFLICT DO NOTHING;
 

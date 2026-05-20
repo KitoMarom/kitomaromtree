@@ -11,8 +11,11 @@ export default function Settings({ onNavigate }) {
     intro_text: '',
     logo_url: '',
     hero_image_url: '',
+    company_name: '',
+    office_address: '',
+    po_box: '',
     contact_phone: '',
-    contact_email: '',
+    contact_fax: '',
     footer_text: ''
   });
   const [loading, setLoading] = useState(true);
@@ -39,8 +42,11 @@ export default function Settings({ onNavigate }) {
             intro_text: data.intro_text || '',
             logo_url: data.logo_url || '',
             hero_image_url: data.hero_image_url || '',
-            contact_phone: data.contact_phone || '',
-            contact_email: data.contact_email || '',
+            company_name: data.company_name || 'קיטו מרום הדרכה טכנולוגית בע"מ',
+            office_address: data.office_address || 'מתחם INTRO, רחוב האורזים 2 נתניה.',
+            po_box: data.po_box || 'ת.ד. 2356, נתניה 42120',
+            contact_phone: data.contact_phone || '09-8344840',
+            contact_fax: data.contact_fax || '09-8344841',
             footer_text: data.footer_text || ''
           });
         }
@@ -228,25 +234,67 @@ export default function Settings({ onNavigate }) {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">טלפון במשרד</label>
+                <label className="form-label">שם החברה</label>
                 <input 
                   type="text" 
+                  required
                   className="form-control"
-                  value={formData.contact_phone}
-                  onChange={e => setFormData({ ...formData, contact_phone: e.target.value })}
-                  placeholder="09-8344840"
+                  value={formData.company_name}
+                  onChange={e => setFormData({ ...formData, company_name: e.target.value })}
+                  placeholder={"קיטו מרום הדרכה טכנולוגית בע\"מ"}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">אימייל ליצירת קשר</label>
+                <label className="form-label">כתובת פיזית במשרד</label>
                 <input 
-                  type="email" 
+                  type="text" 
+                  required
                   className="form-control"
-                  value={formData.contact_email}
-                  onChange={e => setFormData({ ...formData, contact_email: e.target.value })}
-                  placeholder="office@kitomarom.co.il"
+                  value={formData.office_address}
+                  onChange={e => setFormData({ ...formData, office_address: e.target.value })}
+                  placeholder="מתחם INTRO, רחוב האורזים 2 נתניה."
                 />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">מען למכתבים (ת.ד.)</label>
+                <input 
+                  type="text" 
+                  required
+                  className="form-control"
+                  value={formData.po_box}
+                  onChange={e => setFormData({ ...formData, po_box: e.target.value })}
+                  placeholder="ת.ד. 2356, נתניה 42120"
+                />
+              </div>
+
+              <div className="form-row-nested" style={{ display: 'flex', gap: '16px', flex: 1 }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">טלפון במשרד</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="form-control"
+                    value={formData.contact_phone}
+                    onChange={e => setFormData({ ...formData, contact_phone: e.target.value })}
+                    placeholder="09-8344840"
+                  />
+                </div>
+
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">פקס</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="form-control"
+                    value={formData.contact_fax}
+                    onChange={e => setFormData({ ...formData, contact_fax: e.target.value })}
+                    placeholder="09-8344841"
+                  />
+                </div>
               </div>
             </div>
 
