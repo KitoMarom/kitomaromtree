@@ -234,7 +234,7 @@ export default function Settings({ onNavigate }) {
                   className="form-control"
                   value={formData.contact_phone}
                   onChange={e => setFormData({ ...formData, contact_phone: e.target.value })}
-                  placeholder="09-7407000"
+                  placeholder="09-8344840"
                 />
               </div>
 
