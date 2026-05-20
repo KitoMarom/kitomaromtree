@@ -80,68 +80,54 @@ ALTER TABLE public.page_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.registration_cards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
+-- Helper Security Definer Functions to prevent RLS infinite recursion
+CREATE OR REPLACE FUNCTION public.is_admin(user_id uuid)
+RETURNS boolean AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = user_id AND role = 'admin' AND is_active = true
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.is_staff(user_id uuid)
+RETURNS boolean AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = user_id AND role IN ('admin', 'editor') AND is_active = true
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 1. Profiles RLS Policies
 CREATE POLICY "Allow users to read own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Allow active admins to manage profiles" ON public.profiles
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.is_active = true 
-            AND profiles.role = 'admin'
-        )
-    );
+    FOR ALL USING (public.is_admin(auth.uid()));
 
 -- 2. Page Settings RLS Policies
 CREATE POLICY "Allow public read of settings" ON public.page_settings
     FOR SELECT USING (true);
 
 CREATE POLICY "Allow active staff to update settings" ON public.page_settings
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.is_active = true 
-            AND profiles.role IN ('admin', 'editor')
-        )
-    );
+    FOR UPDATE USING (public.is_staff(auth.uid()));
 
 -- 3. Registration Cards RLS Policies
 CREATE POLICY "Allow public read of active cards" ON public.registration_cards
     FOR SELECT USING (is_active = true);
 
 CREATE POLICY "Allow active staff to manage cards" ON public.registration_cards
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.is_active = true 
-            AND profiles.role IN ('admin', 'editor')
-        )
-    );
+    FOR ALL USING (public.is_staff(auth.uid()));
 
 -- 4. Audit Logs RLS Policies
 CREATE POLICY "Allow active staff to read logs" ON public.audit_logs
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.is_active = true 
-            AND profiles.role IN ('admin', 'editor')
-        )
-    );
+    FOR SELECT USING (public.is_staff(auth.uid()));
 
 CREATE POLICY "Allow active staff to insert logs" ON public.audit_logs
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.is_active = true 
-            AND profiles.role IN ('admin', 'editor')
-        )
-    );
+    FOR INSERT WITH CHECK (public.is_staff(auth.uid()));
 
 -- Profile Auto-Creation Trigger from auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()
