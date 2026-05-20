@@ -31,17 +31,22 @@ function groupByActivity(cards) {
 
   cards.forEach((card) => {
     const title = (card.display_title || 'פרויקט הרשמה').trim();
+    const projectDescription = (card.project_description || '').trim();
     const sortOrder = Number(card.sort_order) || 0;
 
     if (!groups.has(title)) {
       groups.set(title, {
         title,
+        projectDescription,
         sortOrder,
         areas: []
       });
     }
 
     const group = groups.get(title);
+    if (!group.projectDescription && projectDescription) {
+      group.projectDescription = projectDescription;
+    }
     group.sortOrder = Math.min(group.sortOrder, sortOrder);
     group.areas.push(card);
   });
@@ -248,6 +253,17 @@ export default function PublicPage({ registrationId, onNavigate }) {
                   }}>
                     {selectedRegistration.area_name}
                   </p>
+                  {selectedRegistration.project_description && (
+                    <p style={{
+                      fontSize: '16px',
+                      lineHeight: '1.65',
+                      color: 'var(--text-muted)',
+                      marginTop: '12px',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {selectedRegistration.project_description}
+                    </p>
+                  )}
                 </div>
 
                 {selectedRegistration.description && (
@@ -327,6 +343,17 @@ export default function PublicPage({ registrationId, onNavigate }) {
                     }}>
                       {activity.title}
                     </h2>
+                    {activity.projectDescription && (
+                      <p style={{
+                        fontSize: '16px',
+                        lineHeight: '1.6',
+                        color: 'var(--text-muted)',
+                        marginTop: '-6px',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {activity.projectDescription}
+                      </p>
+                    )}
 
                     <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
                       <div style={{

@@ -23,6 +23,7 @@ const PROJECT_DRAFT_KEY = 'kito-admin-project-draft-v1';
 const EMPTY_FORM = {
   area_name: '',
   display_title: '',
+  project_description: '',
   description: '',
   target_url: '',
   sort_order: 0,
@@ -32,6 +33,7 @@ const EMPTY_FORM = {
 
 const EMPTY_PROJECT_FORM = {
   title: '',
+  description: '',
   areaIds: []
 };
 
@@ -61,6 +63,10 @@ function getOperationErrorMessage(err, fallback) {
     return 'הדאטהבייס עדיין לא עודכן לתמיכה בבחירה "בתי ספר וגני ילדים". צריך להריץ את מיגרציית ה-constraint ב-Supabase.';
   }
 
+  if (err?.message?.includes('project_description')) {
+    return 'הדאטהבייס עדיין לא עודכן לשדה תיאור פרויקט. צריך להריץ את מיגרציית project_description ב-Supabase.';
+  }
+
   return err?.message || fallback;
 }
 
@@ -69,17 +75,22 @@ function groupByActivity(cards) {
 
   cards.forEach((card) => {
     const title = (card.display_title || 'פרויקט הרשמה').trim();
+    const projectDescription = (card.project_description || '').trim();
     const sortOrder = Number(card.sort_order) || 0;
 
     if (!groups.has(title)) {
       groups.set(title, {
         title,
+        projectDescription,
         sortOrder,
         areas: []
       });
     }
 
     const group = groups.get(title);
+    if (!group.projectDescription && projectDescription) {
+      group.projectDescription = projectDescription;
+    }
     group.sortOrder = Math.min(group.sortOrder, sortOrder);
     group.areas.push(card);
   });
@@ -128,6 +139,9 @@ export default function Cards({ onNavigate }) {
   ));
   const [showProjectForm, setShowProjectForm] = useState(Boolean(initialProjectDraft?.showProjectForm));
   const [editingProjectTitle, setEditingProjectTitle] = useState(initialProjectDraft?.editingProjectTitle || '');
+  const [editingProjectDescription, setEditingProjectDescription] = useState(
+    initialProjectDraft?.editingProjectDescription || ''
+  );
   const [projectFormData, setProjectFormData] = useState(() => (
     initialProjectDraft?.showProjectForm
       ? { ...EMPTY_PROJECT_FORM, ...(initialProjectDraft.projectFormData || {}) }
@@ -136,6 +150,7 @@ export default function Cards({ onNavigate }) {
 
   const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
   const isAddingAreaToExistingActivity = !editingCardId && Boolean(lockedActivityTitle);
+  const isCreatingNewActivity = !editingCardId && !isAddingAreaToExistingActivity;
 
   useEffect(() => {
     if (!showForm) {
@@ -160,9 +175,10 @@ export default function Cards({ onNavigate }) {
     writeAdminDraft(PROJECT_DRAFT_KEY, {
       showProjectForm,
       editingProjectTitle,
+      editingProjectDescription,
       projectFormData
     });
-  }, [showProjectForm, editingProjectTitle, projectFormData]);
+  }, [showProjectForm, editingProjectTitle, editingProjectDescription, projectFormData]);
 
   async function loadCards() {
     try {
@@ -228,6 +244,7 @@ export default function Cards({ onNavigate }) {
     clearAdminDraft(PROJECT_DRAFT_KEY);
     setProjectFormData(EMPTY_PROJECT_FORM);
     setEditingProjectTitle('');
+    setEditingProjectDescription('');
     setShowProjectForm(false);
   }
 
@@ -238,6 +255,7 @@ export default function Cards({ onNavigate }) {
     setFormData({
       area_name: card.area_name || '',
       display_title: card.display_title || '',
+      project_description: card.project_description || '',
       description: card.description || '',
       target_url: card.target_url || '',
       sort_order: card.sort_order || 0,
@@ -264,6 +282,7 @@ export default function Cards({ onNavigate }) {
     setFormData({
       ...EMPTY_FORM,
       display_title: activity.title,
+      project_description: activity.projectDescription || '',
       sort_order: activity.sortOrder
     });
     setShowForm(true);
@@ -273,8 +292,10 @@ export default function Cards({ onNavigate }) {
   function handleEditProjectClick(activity) {
     resetForm();
     setEditingProjectTitle(activity.title);
+    setEditingProjectDescription(activity.projectDescription || '');
     setProjectFormData({
       title: activity.title,
+      description: activity.projectDescription || '',
       areaIds: activity.areas.map((area) => area.id)
     });
     setShowProjectForm(true);
@@ -285,6 +306,7 @@ export default function Cards({ onNavigate }) {
     return {
       area_name: formData.area_name.trim(),
       display_title: formData.display_title.trim(),
+      project_description: formData.project_description.trim(),
       description: formData.description.trim(),
       target_url: formData.target_url.trim(),
       sort_order: Number(formData.sort_order) || 0,
@@ -299,6 +321,7 @@ export default function Cards({ onNavigate }) {
     setMessage(null);
 
     const normalizedTitle = projectFormData.title.trim();
+    const normalizedDescription = projectFormData.description.trim();
 
     if (!normalizedTitle) {
       setError('שם הפרויקט לא יכול להיות ריק.');
@@ -310,7 +333,7 @@ export default function Cards({ onNavigate }) {
       return;
     }
 
-    if (normalizedTitle === editingProjectTitle) {
+    if (normalizedTitle === editingProjectTitle && normalizedDescription === editingProjectDescription) {
       resetProjectForm();
       return;
     }
@@ -322,6 +345,7 @@ export default function Cards({ onNavigate }) {
         .from('registration_cards')
         .update({
           display_title: normalizedTitle,
+          project_description: normalizedDescription,
           updated_at: new Date().toISOString()
         })
         .in('id', projectFormData.areaIds);
@@ -331,10 +355,10 @@ export default function Cards({ onNavigate }) {
       await writeAuditLog(
         'UPDATE_PROJECT',
         projectFormData.areaIds[0],
-        `Renamed project ${editingProjectTitle} to ${normalizedTitle}`
+        `Updated project ${editingProjectTitle} to ${normalizedTitle}`
       );
 
-      setMessage(`הפרויקט "${editingProjectTitle}" עודכן ל-"${normalizedTitle}".`);
+      setMessage(`הפרויקט "${normalizedTitle}" עודכן בהצלחה.`);
       resetProjectForm();
       await loadCards();
     } catch (err) {
@@ -458,6 +482,7 @@ export default function Cards({ onNavigate }) {
         .insert({
           area_name: normalizedAreaName,
           display_title: card.display_title,
+          project_description: card.project_description || '',
           description: card.description || '',
           target_url: card.target_url,
           sort_order: Number(card.sort_order) + 1 || 0,
@@ -499,6 +524,7 @@ export default function Cards({ onNavigate }) {
       const duplicatedAreas = activity.areas.map((area) => ({
         area_name: area.area_name,
         display_title: normalizedActivityTitle,
+        project_description: area.project_description || activity.projectDescription || '',
         description: area.description || '',
         target_url: area.target_url,
         sort_order: area.sort_order || 0,
@@ -694,6 +720,18 @@ export default function Cards({ onNavigate }) {
               </span>
             </div>
 
+            <div className="form-group">
+              <label className="form-label">תיאור הפרויקט</label>
+              <textarea
+                className="form-control"
+                rows="4"
+                placeholder="תיאור קצר שיופיע מתחת לשם הפרויקט בעמוד הציבורי."
+                value={projectFormData.description}
+                onChange={(event) => setProjectFormData({ ...projectFormData, description: event.target.value })}
+                style={{ resize: 'vertical', minHeight: '110px' }}
+              />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
               <button type="button" onClick={resetProjectForm} className="btn btn-text">ביטול</button>
               <button type="submit" disabled={opLoading} className="btn btn-primary">
@@ -754,6 +792,20 @@ export default function Cards({ onNavigate }) {
                 />
               </div>
             </div>
+
+            {isCreatingNewActivity && (
+              <div className="form-group">
+                <label className="form-label">תיאור הפרויקט</label>
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  placeholder="תיאור קצר ופשוט שיופיע מתחת לשם הפרויקט בעמוד הציבורי."
+                  value={formData.project_description}
+                  onChange={(event) => setFormData({ ...formData, project_description: event.target.value })}
+                  style={{ resize: 'vertical', minHeight: '110px' }}
+                />
+              </div>
+            )}
 
             <div className="form-row">
               <div className="form-group">
@@ -857,6 +909,18 @@ export default function Cards({ onNavigate }) {
                     <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
                       {activity.title}
                     </h2>
+                    {activity.projectDescription && (
+                      <p style={{
+                        color: 'var(--text-dark)',
+                        fontSize: '15px',
+                        lineHeight: '1.55',
+                        marginTop: '6px',
+                        maxWidth: '720px',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {activity.projectDescription}
+                      </p>
+                    )}
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
                       {activity.areas.length} אזורים בפרויקט
                     </p>
