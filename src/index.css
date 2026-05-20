@@ -2,33 +2,54 @@
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&display=swap');
 
 :root {
-  /* Colors - Kito Marom Brand Guidelines */
-  --primary-purple: #483970; /* Meteorite Purple */
-  --primary-light: #FCF8E3;  /* Coconut Pulp (Secondary Cream) */
-  --primary-dark: #333333;   /* Dark Grey */
-  --accent-gold: #F0AD4E;    /* Goldenrod Field Accent */
-  --accent-blue: #337AB7;    /* North Atlantic Breeze Accent */
-  --text-dark: #2D2D2D;      /* Charcoal Text */
-  --text-muted: #868686;     /* Slate / Grey Text */
-  --bg-main: #FCFAF2;        /* Warm, elegant Kito Marom cream/beige background */
-  --bg-card: #ffffff;        /* White Cards */
-  --border-color: #E6E2D8;    /* Warm, refined soft border */
-  --success: #DFF0D8;        /* Hint of Mint Success Tint */
-  --success-text: #3c763d;   /* Dark Green text */
-  --danger: #F2DEDE;         /* Diminutive Pink Danger Tint */
-  --danger-text: #a94442;     /* Dark Red text */
+  /* Colors - Kito Marom Sync Design System */
+  --primary-color: #337AB7;   /* North Atlantic Blue (colors.primary) */
+  --secondary-color: #5A4D7E; /* Grayish Purple (colors.secondary) */
+  --accent-color: #5CB85C;    /* Accent Green (colors.accent) */
+  --bg-main: #FFFFFF;         /* White Background (colors.background) */
+  --bg-card: #ffffff;         /* White Cards */
+  --text-dark: #483970;       /* Meteorite Purple (colors.textPrimary) */
+  --text-muted: #5A4D7E;      /* Secondary text tone */
+  --border-color: #DDDDDD;    /* Border tint */
+  --primary-purple: #483970;
+  --primary-light: #EFEFEF;
+  --primary-dark: #483970;
+  --accent-gold: #5CB85C;
+  --accent-blue: #337AB7;
+
+  /* Alert States */
+  --success: #DFF0D8;
+  --success-text: #3c763d;
+  --danger: #F2DEDE;
+  --danger-text: #a94442;
 
   /* Typography */
-  --font-family: 'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  
-  /* Layout */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 20px;
-  --shadow-sm: 0 2px 4px rgba(72, 57, 112, 0.04);
-  --shadow-md: 0 10px 30px -5px rgba(72, 57, 112, 0.08), 0 8px 12px -6px rgba(72, 57, 112, 0.04);
-  --shadow-lg: 0 20px 45px -15px rgba(72, 57, 112, 0.15);
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-family: 'Assistant', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-h1: 18px; /* typography.fontSizes.h1 */
+  --font-size-h2: 18px; /* typography.fontSizes.h2 */
+  --font-size-body: 20px; /* typography.fontSizes.body */
+
+  /* Components Style Tokens */
+  --input-bg: #EFEFEF; /* components.input.background */
+  --input-text: #483970; /* components.input.textColor */
+  --input-radius: 0px; /* components.input.borderRadius */
+
+  --btn-primary-bg: #5CB85C; /* components.buttonPrimary.background */
+  --btn-primary-text: #FFFFFF; /* components.buttonPrimary.textColor */
+  --btn-primary-radius: 3px; /* components.buttonPrimary.borderRadius */
+
+  --btn-secondary-bg: #DDDDDD; /* components.buttonSecondary.background */
+  --btn-secondary-text: #333333; /* components.buttonSecondary.textColor */
+  --btn-secondary-radius: 0px; /* components.buttonSecondary.borderRadius */
+
+  /* Spacing & Layout */
+  --radius-sm: 4px; /* spacing.borderRadius */
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --transition: all 0.2s ease-in-out;
 }
 
 /* Global Reset & Base Styling */
@@ -42,6 +63,7 @@ body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   color: var(--text-dark);
+  font-size: var(--font-size-body);
   direction: rtl;
   text-align: right;
   min-height: 100vh;
@@ -57,7 +79,7 @@ body {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #6d5a9e;
+  background: var(--secondary-color);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -65,7 +87,21 @@ body {
 }
 
 /* Typography elements */
-h1, h2, h3, h4, h5, h6 {
+h1 {
+  font-size: var(--font-size-h1);
+  color: var(--primary-dark);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  color: var(--primary-dark);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+h3, h4, h5, h6 {
   color: var(--primary-dark);
   font-weight: 700;
   line-height: 1.25;
@@ -117,39 +153,41 @@ a {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-purple) 0%, #635390 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(72, 57, 112, 0.2);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-radius: var(--btn-primary-radius);
+  box-shadow: none;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(72, 57, 112, 0.3);
+  background-color: #4cae4c; /* slightly darker green */
+  box-shadow: none;
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  background-color: #449d44;
 }
 
 .btn-secondary {
-  background-color: var(--primary-light);
-  color: var(--primary-purple);
+  background-color: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-radius: var(--btn-secondary-radius);
+  box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background-color: #ebd5ff;
-  transform: translateY(-2px);
+  background-color: #cccccc; /* slightly darker grey */
 }
 
 .btn-outline {
   background-color: transparent;
-  border: 2px solid var(--primary-purple);
-  color: var(--primary-purple);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  border-radius: var(--btn-secondary-radius);
 }
 
 .btn-outline:hover {
-  background-color: var(--primary-light);
-  transform: translateY(-2px);
+  background-color: rgba(51, 122, 183, 0.05);
 }
 
 .btn-danger {
@@ -215,17 +253,19 @@ a {
   font-family: var(--font-family);
   font-size: 16px;
   padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  background-color: white;
+  border: 1px solid transparent;
+  border-radius: var(--input-radius);
+  background-color: var(--input-bg);
+  color: var(--input-text);
   transition: var(--transition);
   outline: none;
   width: 100%;
 }
 
 .form-control:focus {
-  border-color: var(--primary-purple);
-  box-shadow: 0 0 0 4px rgba(92, 31, 156, 0.1);
+  border-color: var(--primary-color);
+  background-color: #f7f7f7;
+  box-shadow: none;
 }
 
 .form-row {
