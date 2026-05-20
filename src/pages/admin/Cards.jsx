@@ -21,7 +21,9 @@ export default function Cards({ onNavigate }) {
     image_url: '',
     target_url: '',
     sort_order: 0,
-    is_active: true
+    is_active: true,
+    education_level: 'school',
+    program_type: 'after_school'
   });
 
   async function loadCards() {
@@ -55,7 +57,9 @@ export default function Cards({ onNavigate }) {
       image_url: card.image_url || '',
       target_url: card.target_url || '',
       sort_order: card.sort_order || 0,
-      is_active: card.is_active !== undefined ? card.is_active : true
+      is_active: card.is_active !== undefined ? card.is_active : true,
+      education_level: card.education_level || 'school',
+      program_type: card.program_type || 'after_school'
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -71,7 +75,9 @@ export default function Cards({ onNavigate }) {
       image_url: '',
       target_url: '',
       sort_order: 0,
-      is_active: true
+      is_active: true,
+      education_level: 'school',
+      program_type: 'after_school'
     });
   }
 
@@ -262,6 +268,32 @@ export default function Cards({ onNavigate }) {
 
               <div className="form-row">
                 <div className="form-group">
+                  <label className="form-label">מוסד חינוכי</label>
+                  <select 
+                    className="form-control"
+                    value={formData.education_level}
+                    onChange={e => setFormData({ ...formData, education_level: e.target.value })}
+                  >
+                    <option value="school">בתי ספר</option>
+                    <option value="kindergarten">גני ילדים</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">סוג פעילות</label>
+                  <select 
+                    className="form-control"
+                    value={formData.program_type}
+                    onChange={e => setFormData({ ...formData, program_type: e.target.value })}
+                  >
+                    <option value="after_school">צהרונים</option>
+                    <option value="camp">קייטנות</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
                   <label className="form-label">קישור לתמונה לכרטיס (אופציונלי)</label>
                   <input 
                     type="url" 
@@ -343,6 +375,14 @@ export default function Cards({ onNavigate }) {
                       {/* Area Badge */}
                       <td style={{ padding: '16px 20px', fontWeight: '700', fontSize: '15px', color: 'var(--primary-dark)' }}>
                         📍 {card.area_name}
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                          <span className="badge badge-primary" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                            {card.education_level === 'school' ? 'בתי ספר' : 'גני ילדים'}
+                          </span>
+                          <span className="badge badge-primary" style={{ fontSize: '11px', padding: '2px 8px', backgroundColor: '#e0f2fe', color: '#0369a1' }}>
+                            {card.program_type === 'after_school' ? 'צהרונים' : 'קייטנות'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Display Title */}

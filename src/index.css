@@ -1,31 +1,34 @@
-/* Import Google Font (Rubik is a clean, modern Hebrew font) */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
+/* Import Google Font (Assistant is a clean, modern Hebrew font used in Kito Marom) */
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200..800&display=swap');
 
 :root {
-  /* Colors */
-  --primary-purple: #5c1f9c; /* Kito Marom Purple */
-  --primary-light: #f3e8ff;
-  --primary-dark: #3b0764;
-  --accent-gold: #f59e0b;
-  --text-dark: #1e1b4b; /* Deep Indigo text */
-  --text-muted: #475569; /* Slate grey */
-  --bg-main: #faf9fc; /* Soft purple/grey bg */
-  --bg-card: #ffffff;
-  --border-color: #e2e8f0;
-  --success: #10b981;
-  --danger: #ef4444;
+  /* Colors - Kito Marom Brand Guidelines */
+  --primary-purple: #483970; /* Meteorite Purple */
+  --primary-light: #FCF8E3;  /* Coconut Pulp (Secondary Cream) */
+  --primary-dark: #333333;   /* Dark Grey */
+  --accent-gold: #F0AD4E;    /* Goldenrod Field Accent */
+  --accent-blue: #337AB7;    /* North Atlantic Breeze Accent */
+  --text-dark: #2D2D2D;      /* Charcoal Text */
+  --text-muted: #868686;     /* Slate / Grey Text */
+  --bg-main: #EEEEEE;        /* Off White Surface */
+  --bg-card: #ffffff;        /* White Cards */
+  --border-color: #DFDFDF;    /* Light Grey Border */
+  --success: #DFF0D8;        /* Hint of Mint Success Tint */
+  --success-text: #3c763d;   /* Dark Green text */
+  --danger: #F2DEDE;         /* Diminutive Pink Danger Tint */
+  --danger-text: #a94442;     /* Dark Red text */
 
   /* Typography */
-  --font-family: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-family: 'Assistant', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   
   /* Layout */
-  --radius-sm: 8px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 10px 25px -5px rgba(92, 31, 156, 0.08), 0 8px 10px -6px rgba(92, 31, 156, 0.05);
-  --shadow-lg: 0 20px 40px -15px rgba(92, 31, 156, 0.15);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-md: 0 10px 25px -5px rgba(72, 57, 112, 0.08), 0 8px 10px -6px rgba(72, 57, 112, 0.05);
+  --shadow-lg: 0 20px 40px -15px rgba(72, 57, 112, 0.15);
+  --transition: all 0.2s ease-in-out;
 }
 
 /* Global Reset & Base Styling */
@@ -54,7 +57,7 @@ body {
   background: var(--bg-main);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c084fc;
+  background: #6d5a9e;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {

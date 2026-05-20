@@ -1,10 +1,14 @@
 import React from 'react';
 
 export default function RegistrationCard({ card }) {
-  const { area_name, display_title, description, image_url, target_url } = card;
+  const { area_name, display_title, description, image_url, target_url, education_level, program_type } = card;
 
   // Use a generic placeholder with Kito Marom styles if no image is uploaded
   const cardImage = image_url || `https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?q=80&w=400&auto=format&fit=crop`;
+
+  // Translate category values
+  const educationLevelLabel = education_level === 'kindergarten' ? 'גני ילדים' : 'בתי ספר';
+  const programTypeLabel = program_type === 'camp' ? 'קייטנות' : 'צהרונים';
 
   return (
     <div className="card card-hover" style={{
@@ -29,7 +33,7 @@ export default function RegistrationCard({ card }) {
         zIndex: 2,
         fontWeight: '700'
       }}>
-        📍 {area_name}
+        {area_name}
       </span>
 
       {/* Card Visual Header */}
@@ -50,11 +54,11 @@ export default function RegistrationCard({ card }) {
           }}
           className="card-img"
         />
-        {/* Soft overlay gradient */}
+        {/* Soft overlay gradient in Meteorite Purple */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to top, rgba(92, 31, 156, 0.4) 0%, transparent 100%)'
+          background: 'linear-gradient(to top, rgba(72, 57, 112, 0.4) 0%, transparent 100%)'
         }}></div>
       </div>
 
@@ -86,6 +90,32 @@ export default function RegistrationCard({ card }) {
           </p>
         )}
 
+        {/* Categories Badges */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: 'auto', paddingTop: '8px', marginBottom: '4px' }}>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: '600',
+            backgroundColor: '#F3F4F6',
+            color: '#374151',
+            padding: '4px 10px',
+            borderRadius: '9999px',
+            border: '1px solid var(--border-color)'
+          }}>
+            {educationLevelLabel}
+          </span>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: '600',
+            backgroundColor: program_type === 'camp' ? 'rgba(240, 173, 78, 0.15)' : 'rgba(51, 122, 183, 0.12)',
+            color: program_type === 'camp' ? '#d97706' : '#2b6cb0',
+            padding: '4px 10px',
+            borderRadius: '9999px',
+            border: program_type === 'camp' ? '1px solid rgba(240, 173, 78, 0.3)' : '1px solid rgba(51, 122, 183, 0.25)'
+          }}>
+            {programTypeLabel}
+          </span>
+        </div>
+
         {/* CTA Button linking to registration */}
         <a 
           href={target_url} 
@@ -93,7 +123,7 @@ export default function RegistrationCard({ card }) {
           rel="noopener noreferrer" 
           className="btn btn-primary w-full"
           style={{
-            marginTop: '12px',
+            marginTop: '8px',
             padding: '12px',
             fontSize: '15px',
             fontWeight: '700',
@@ -101,7 +131,7 @@ export default function RegistrationCard({ card }) {
             display: 'block'
           }}
         >
-          מעבר להרשמה מאובטחת 🚀
+          מעבר להרשמה מאובטחת
         </a>
       </div>
     </div>

@@ -1,8 +1,7 @@
 import React from 'react';
 
 export default function Header({ settings }) {
-  const logoUrl = settings?.logo_url || 'https://www.atarix.kitomarom.co.il/images/logo.png';
-  const pageTitle = settings?.page_title || 'צהרונים וקייטנות קיטו מרום';
+  const logoUrl = 'https://www.kitomarom.co.il/assets/images/logo.png';
 
   return (
     <header className="glass" style={{
@@ -13,39 +12,19 @@ export default function Header({ settings }) {
       padding: '16px 0',
       transition: 'var(--transition)'
     }}>
-      <div className="container justify-between items-center flex" style={{ width: '100%' }}>
-        <div className="logo-container" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="container justify-between items-center flex" style={{ width: '100%', justifyContent: 'center' }}>
+        <div className="logo-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img 
             src={logoUrl} 
             alt="לוגו קיטו מרום" 
             style={{ 
-              height: '50px', 
-              objectFit: 'contain',
-              filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' 
+              height: '55px', 
+              objectFit: 'contain'
             }} 
             onError={(e) => {
-              e.target.src = 'https://placehold.co/150x50/5c1f9c/ffffff?text=קיטו+מרום';
+              e.target.src = 'https://www.kitomarom.co.il/assets/images/logo.png';
             }}
           />
-        </div>
-        
-        <div className="header-info flex items-center gap-4">
-          {settings?.contact_phone && (
-            <a 
-              href={`tel:${settings.contact_phone}`} 
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '14px', whiteSpace: 'nowrap' }}
-            >
-              📞 {settings.contact_phone}
-            </a>
-          )}
-          <a 
-            href="/admin/login" 
-            className="btn btn-text btn-sm"
-            style={{ fontWeight: '600' }}
-          >
-            כניסת צוות 🔒
-          </a>
         </div>
       </div>
     </header>

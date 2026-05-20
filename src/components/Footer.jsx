@@ -32,9 +32,9 @@ export default function Footer({ settings }) {
           <div>
             <h3 style={{ color: 'white', marginBottom: '16px', fontSize: '20px' }}>צרו קשר</h3>
             <ul style={{ listStyle: 'none', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li>📞 טלפון במשרד: {phone}</li>
-              <li>✉️ אימייל: <a href={`mailto:${email}`} style={{ color: 'var(--primary-light)' }}>{email}</a></li>
-              <li>📍 שעות פעילות: א׳-ה׳ 08:30 - 16:30</li>
+              <li>טלפון במשרד: {phone}</li>
+              <li>אימייל: <a href={`mailto:${email}`} style={{ color: 'var(--primary-light)' }}>{email}</a></li>
+              <li>שעות פעילות: א׳-ה׳ 08:30 - 16:30</li>
             </ul>
           </div>
 

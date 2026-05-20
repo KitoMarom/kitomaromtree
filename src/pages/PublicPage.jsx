@@ -79,100 +79,70 @@ export default function PublicPage() {
 
   const heroImage = settings?.hero_image_url || `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1200&auto=format&fit=crop`;
 
+  // Filter States
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('all'); // all, school, kindergarten
+  const [selectedActivity, setSelectedActivity] = useState('all'); // all, after_school, camp
+
+  // Extract unique areas from active cards
+  const uniqueAreas = Array.from(new Set(cards.map(c => c.area_name).filter(Boolean)));
+
+  // Filter logic
+  const filteredCards = cards.filter(card => {
+    const matchesArea = !selectedArea || card.area_name === selectedArea;
+    const cardLevel = card.education_level || 'school';
+    const cardActivity = card.program_type || 'after_school';
+    
+    const matchesLevel = selectedLevel === 'all' || cardLevel === selectedLevel;
+    const matchesActivity = selectedActivity === 'all' || cardActivity === selectedActivity;
+    
+    return matchesArea && matchesLevel && matchesActivity;
+  });
+
   return (
     <div className="app-container">
       <Header settings={settings} />
 
-      <main className="main-content" style={{ paddingBottom: '80px' }}>
-        {/* Hero Section */}
+      <main className="main-content" style={{ paddingBottom: '60px' }}>
+        {/* Simplified Hero Section */}
         <section style={{
           position: 'relative',
-          padding: '80px 0',
-          backgroundImage: `linear-gradient(135deg, rgba(92, 31, 156, 0.95) 0%, rgba(59, 7, 100, 0.95) 100%), url(${heroImage})`,
+          padding: '40px 0',
+          backgroundImage: `linear-gradient(135deg, rgba(72, 57, 112, 0.95) 0%, rgba(48, 35, 80, 0.95) 100%), url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           color: 'white',
           textAlign: 'center',
-          borderBottom: '6px solid var(--accent-gold)'
+          borderBottom: '5px solid var(--accent-gold)'
         }}>
-          {/* Subtle geometric circles */}
-          <div style={{
-            position: 'absolute',
-            top: '10%',
-            left: '5%',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.03)',
-            pointerEvents: 'none'
-          }}></div>
-          <div style={{
-            position: 'absolute',
-            bottom: '15%',
-            right: '8%',
-            width: '180px',
-            height: '180px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.04)',
-            pointerEvents: 'none'
-          }}></div>
-
           <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-            <span style={{
-              display: 'inline-block',
-              backgroundColor: 'var(--accent-gold)',
-              color: 'var(--primary-dark)',
-              fontWeight: '800',
-              padding: '6px 16px',
-              borderRadius: '9999px',
-              fontSize: '14px',
-              marginBottom: '16px',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
-            }}>
-              ✨ הרשמה לשנת הלימודים תשפ"ו
-            </span>
-            
             <h1 style={{
               color: 'white',
-              fontSize: 'clamp(32px, 5vw, 48px)',
+              fontSize: 'clamp(28px, 4vw, 40px)',
               fontWeight: '800',
               textShadow: '0 2px 4px rgba(0,0,0,0.2)',
-              marginBottom: '16px',
+              marginBottom: '12px',
               lineHeight: '1.2'
             }}>
               {settings?.page_title}
             </h1>
             
             <p style={{
-              fontSize: 'clamp(16px, 2.5vw, 20px)',
+              fontSize: 'clamp(15px, 2vw, 18px)',
               color: '#f3e8ff',
               maxWidth: '800px',
-              margin: '0 auto 24px',
+              margin: '0 auto',
               lineHeight: '1.6',
               fontWeight: '500'
             }}>
               {settings?.page_subtitle}
             </p>
-
-            {settings?.intro_text && (
-              <p style={{
-                fontSize: '15px',
-                color: '#e9d5ff',
-                maxWidth: '650px',
-                margin: '0 auto',
-                lineHeight: '1.6',
-                borderTop: '1px solid rgba(255,255,255,0.15)',
-                paddingTop: '16px'
-              }}>
-                {settings.intro_text}
-              </p>
-            )}
           </div>
         </section>
 
         {/* Error State */}
         {error && (
-          <section style={{ marginTop: '40px' }}>
+          <section style={{ marginTop: '30px' }}>
             <div className="container">
               <div className="card text-center" style={{ borderLeft: '5px solid var(--danger)', backgroundColor: '#fef2f2' }}>
                 <p style={{ color: '#b91c1c', fontWeight: '600', fontSize: '16px' }}>{error}</p>
@@ -181,49 +151,222 @@ export default function PublicPage() {
           </section>
         )}
 
-        {/* Cards Section */}
+        {/* Filters & Cards Section */}
         {!error && (
-          <section style={{ marginTop: '50px' }}>
+          <section style={{ marginTop: '35px' }}>
             <div className="container">
+              
+              {/* Premium Horizontal Filter Bar */}
+              <div className="card" style={{
+                padding: '20px',
+                marginBottom: '35px',
+                backgroundColor: 'white',
+                border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)',
+                borderRadius: 'var(--radius-md)'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '24px',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  {/* Filter Group: Area */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    flex: '1 1 200px'
+                  }}>
+                    <label style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary-dark)' }}>אזור בארץ</label>
+                    <select
+                      className="form-control"
+                      style={{ padding: '10px 14px', fontSize: '15px' }}
+                      value={selectedArea}
+                      onChange={(e) => setSelectedArea(e.target.value)}
+                    >
+                      <option value="">כל האזורים</option>
+                      {uniqueAreas.map(area => (
+                        <option key={area} value={area}>{area}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Filter Group: Education Level */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    flex: '1 1 250px'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary-dark)' }}>מוסד חינוכי</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLevel('all')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedLevel === 'all' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedLevel === 'all' ? 'var(--primary-light)' : 'white',
+                          color: selectedLevel === 'all' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        הכל
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLevel('school')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedLevel === 'school' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedLevel === 'school' ? 'var(--primary-light)' : 'white',
+                          color: selectedLevel === 'school' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        בתי ספר
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLevel('kindergarten')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedLevel === 'kindergarten' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedLevel === 'kindergarten' ? 'var(--primary-light)' : 'white',
+                          color: selectedLevel === 'kindergarten' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        גני ילדים
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filter Group: Program Type */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    flex: '1 1 250px'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary-dark)' }}>סוג פעילות</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedActivity('all')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedActivity === 'all' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedActivity === 'all' ? 'var(--primary-light)' : 'white',
+                          color: selectedActivity === 'all' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        הכל
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedActivity('after_school')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedActivity === 'after_school' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedActivity === 'after_school' ? 'var(--primary-light)' : 'white',
+                          color: selectedActivity === 'after_school' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        צהרונים
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedActivity('camp')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          borderRadius: 'var(--radius-sm)',
+                          border: selectedActivity === 'camp' ? '2px solid var(--primary-purple)' : '1px solid var(--border-color)',
+                          backgroundColor: selectedActivity === 'camp' ? 'var(--primary-light)' : 'white',
+                          color: selectedActivity === 'camp' ? 'var(--primary-purple)' : 'var(--text-dark)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition)'
+                        }}
+                      >
+                        קייטנות
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Title Section */}
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '40px'
+                gap: '10px',
+                marginBottom: '30px'
               }}>
                 <h2 style={{
-                  fontSize: '28px',
+                  fontSize: '24px',
                   fontWeight: '800',
                   color: 'var(--primary-dark)',
                   position: 'relative',
-                  paddingBottom: '8px'
+                  paddingBottom: '4px'
                 }}>
                   קישורי הרשמה לפי אזורים
                 </h2>
                 <div style={{
-                  width: '60px',
-                  height: '4px',
+                  width: '50px',
+                  height: '3px',
                   backgroundColor: 'var(--primary-purple)',
                   borderRadius: '2px'
                 }}></div>
               </div>
 
-              {cards.length === 0 ? (
-                <div className="card text-center" style={{ padding: '60px 24px', backgroundColor: '#f8fafc' }}>
-                  <span style={{ fontSize: '48px', marginBottom: '16px', display: 'block' }}>ℹ️</span>
-                  <h3 style={{ fontSize: '20px', color: 'var(--text-muted)', fontWeight: '700' }}>אין כרגע קישורי הרשמה פעילים</h3>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '8px' }}>
-                    מחלקת הרישום מעדכנת את העמוד כעת. אנא חזרו לבקר שוב בקרוב.
+              {/* Dynamic Card Display */}
+              {filteredCards.length === 0 ? (
+                <div className="card text-center" style={{ padding: '50px 24px', backgroundColor: '#f8fafc' }}>
+                  <h3 style={{ fontSize: '18px', color: 'var(--text-muted)', fontWeight: '700' }}>לא נמצאו קישורי הרשמה מתאימים לסינון שנבחר</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>
+                    נסו לשנות את בחירת הסינון או לבחור "הכל" כדי לצפות בכל הקישורים הפעילים.
                   </p>
                 </div>
               ) : (
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                  gap: '30px'
+                  gap: '24px'
                 }}>
-                  {cards.map((card) => (
+                  {filteredCards.map((card) => (
                     <RegistrationCard key={card.id} card={card} />
                   ))}
                 </div>
@@ -231,42 +374,6 @@ export default function PublicPage() {
             </div>
           </section>
         )}
-
-        {/* Contact Strip */}
-        <section style={{ marginTop: '70px' }}>
-          <div className="container">
-            <div className="card glass" style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '24px',
-              padding: '30px 40px',
-              borderRadius: 'var(--radius-md)',
-              borderRight: '6px solid var(--primary-purple)'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-dark)' }}>צריכים עזרה ברישום? 🙋</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '4px' }}>
-                  מוקד השירות והרישום של קיטו מרום זמין עבורכם לכל שאלה או קושי טכני.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                {settings?.contact_phone && (
-                  <a href={`tel:${settings.contact_phone}`} className="btn btn-primary" style={{ padding: '12px 28px' }}>
-                    📞 התקשרו: {settings.contact_phone}
-                  </a>
-                )}
-                {settings?.contact_email && (
-                  <a href={`mailto:${settings.contact_email}`} className="btn btn-outline" style={{ padding: '12px 28px' }}>
-                    ✉️ שלחו אימייל
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <Footer settings={settings} />
