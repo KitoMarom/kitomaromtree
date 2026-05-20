@@ -6,10 +6,7 @@ export default function Login({ onNavigate }) {
   const { user, loading, refreshProfile } = useContext(AuthContext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false); // Toggle to allow first-admin sign up
   const [opLoading, setOpLoading] = useState(false);
-  const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
 
   // If already logged in, redirect to admin dashboard
@@ -22,43 +19,20 @@ export default function Login({ onNavigate }) {
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
-    setMessage(null);
     setOpLoading(true);
 
     try {
-      if (isSignUp) {
-        // Sign Up Flow
-        if (!fullName.trim()) {
-          throw new Error('אנא הכניסו שם מלא');
-        }
-        
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName
-            }
-          }
-        });
+      // Login Flow
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-        if (signUpError) throw signUpError;
-        
-        setMessage('ההרשמה בוצעה בהצלחה! אנא בדקו את תיבת הדוא"ל לאישור המשתמש (או נסו להתחבר כעת אם האישור אוטומטי).');
-        setIsSignUp(false);
-      } else {
-        // Login Flow
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (signInError) throw signInError;
-        
-        // Success
-        await refreshProfile();
-        onNavigate('/admin');
-      }
+      if (signInError) throw signInError;
+      
+      // Success
+      await refreshProfile();
+      onNavigate('/admin');
     } catch (err) {
       console.error('Auth operation failed:', err);
       setError(err.message || 'אירעה שגיאה בתהליך ההתחברות. ודאו שהפרטים נכונים.');
@@ -102,19 +76,14 @@ export default function Login({ onNavigate }) {
             onClick={() => onNavigate('/')}
           />
           <h2 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-dark)', textAlign: 'center' }}>
-            {isSignUp ? 'רישום משתמש צוות חדש' : 'כניסת צוות קיטו מרום'}
+            כניסת צוות קיטו מרום
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
-            {isSignUp ? 'המשתמש הראשון שיירשם במערכת יוגדר אוטומטית כמנהל (Admin)' : 'התחברו לניהול קישורי ההרשמה והגדרות העמוד'}
+            התחברו לניהול קישורי ההרשמה והגדרות העמוד
           </p>
         </div>
 
-        {/* Message / Error banners */}
-        {message && (
-          <div style={{ padding: '12px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: 'var(--radius-sm)', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
-            {message}
-          </div>
-        )}
+        {/* Error banners */}
         {error && (
           <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: 'var(--radius-sm)', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
             ❌ {error}
@@ -122,20 +91,6 @@ export default function Login({ onNavigate }) {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          {isSignUp && (
-            <div className="form-group">
-              <label className="form-label">שם מלא</label>
-              <input 
-                type="text" 
-                required 
-                className="form-control" 
-                placeholder="שיר כהן"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-              />
-            </div>
-          )}
-
           <div className="form-group">
             <label className="form-label">אימייל</label>
             <input 
@@ -166,32 +121,14 @@ export default function Login({ onNavigate }) {
             className="btn btn-primary w-full"
             style={{ padding: '14px', fontSize: '16px', fontWeight: '700', marginTop: '10px' }}
           >
-            {opLoading ? 'מבצע פעולה...' : (isSignUp ? 'הרשמה והגדרת מנהל' : 'התחברות למערכת')}
+            {opLoading ? 'מבצע פעולה...' : 'התחברות למערכת'}
           </button>
         </form>
-
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          marginTop: '24px',
-          fontSize: '14px',
-          borderTop: '1px solid #f1f5f9',
-          paddingTop: '16px'
-        }}>
-          <button 
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="btn btn-text btn-sm"
-            style={{ color: 'var(--primary-purple)', fontWeight: '700' }}
-          >
-            {isSignUp ? 'יש לכם משתמש? התחברו כאן' : 'הרשמת המנהל הראשון / משתמש חדש'}
-          </button>
-        </div>
 
         <button
           onClick={() => onNavigate('/')}
           className="btn btn-text w-full btn-sm"
-          style={{ marginTop: '8px', fontSize: '13px' }}
+          style={{ marginTop: '24px', fontSize: '13px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}
         >
           ⬅️ חזרה לעמוד הציבורי
         </button>
