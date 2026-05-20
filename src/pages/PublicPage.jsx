@@ -10,6 +10,11 @@ export default function PublicPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Filter States
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('all'); // all, school, kindergarten
+  const [selectedActivity, setSelectedActivity] = useState('all'); // all, after_school, camp
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -78,11 +83,6 @@ export default function PublicPage() {
   }
 
   const heroImage = settings?.hero_image_url || `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1200&auto=format&fit=crop`;
-
-  // Filter States
-  const [selectedArea, setSelectedArea] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('all'); // all, school, kindergarten
-  const [selectedActivity, setSelectedActivity] = useState('all'); // all, after_school, camp
 
   // Extract unique areas from active cards
   const uniqueAreas = Array.from(new Set(cards.map(c => c.area_name).filter(Boolean)));

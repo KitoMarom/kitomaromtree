@@ -56,7 +56,7 @@ export default function Dashboard({ onNavigate }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         {/* Welcome Header */}
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>שלום וברוך הבא ללוח הבקרה 👋</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>שלום וברוך הבא ללוח הבקרה</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '16px', marginTop: '6px' }}>
             כאן תוכלו לעדכן ולנהל את קישורי ההרשמה של קיטו מרום לצהרונים וקייטנות.
           </p>
@@ -71,7 +71,7 @@ export default function Dashboard({ onNavigate }) {
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: '20px'
           }}>
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderRight: '4px solid var(--primary-purple)' }}>
               <span style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: '600' }}>כותרת עמוד ציבורי</span>
               <h2 style={{ fontSize: '20px', color: 'var(--primary-purple)', fontWeight: '800' }}>
                 {stats.settingsTitle || 'לא הוגדרה'}
@@ -81,9 +81,9 @@ export default function Dashboard({ onNavigate }) {
               </span>
             </div>
 
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderRight: '4px solid var(--success-text)' }}>
               <span style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: '600' }}>קישורי הרשמה פעילים</span>
-              <h2 style={{ fontSize: '32px', color: 'var(--success)', fontWeight: '800' }}>
+              <h2 style={{ fontSize: '32px', color: 'var(--success-text)', fontWeight: '800' }}>
                 {stats.activeCards} <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-muted)' }}>מתוך {stats.totalCards} סה"כ</span>
               </h2>
               <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
@@ -105,20 +105,48 @@ export default function Dashboard({ onNavigate }) {
             <div 
               className="card card-hover" 
               onClick={() => onNavigate('/admin/settings')}
-              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px' }}
+              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
-              <span style={{ fontSize: '24px' }}>⚙️</span>
-              <h4 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)' }}>הגדרות עמוד הרשמה</h4>
+              <div style={{
+                width: '45px',
+                height: '45px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--primary-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary-purple)'
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </div>
+              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>הגדרות עמוד הרשמה</h4>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>עריכת כותרות, פרטי לוגו, טלפון ואימייל ליצירת קשר עם המשרד.</p>
             </div>
 
             <div 
               className="card card-hover" 
               onClick={() => onNavigate('/admin/cards')}
-              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px' }}
+              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
-              <span style={{ fontSize: '24px' }}>🔗</span>
-              <h4 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)' }}>ניהול קישורי אזורים</h4>
+              <div style={{
+                width: '45px',
+                height: '45px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--primary-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary-purple)'
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                </svg>
+              </div>
+              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול קישורי אזורים</h4>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספה, עריכה, סידור והפעלה/כיבוי של קישורי ההרשמה לפי ערים ואזורים.</p>
             </div>
 
@@ -126,10 +154,26 @@ export default function Dashboard({ onNavigate }) {
               <div 
                 className="card card-hover" 
                 onClick={() => onNavigate('/admin/users')}
-                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '10px' }}
+                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '12px' }}
               >
-                <span style={{ fontSize: '24px' }}>👥</span>
-                <h4 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--primary-dark)' }}>ניהול הרשאות וצוות</h4>
+                <div style={{
+                  width: '45px',
+                  height: '45px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--primary-light)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--primary-purple)'
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </div>
+                <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול הרשאות וצוות</h4>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספת משתמשים חדשים, שינוי תפקידים (עורך/מנהל) והשעיית הרשאות גישה.</p>
               </div>
             )}
@@ -138,12 +182,22 @@ export default function Dashboard({ onNavigate }) {
 
         {/* Informational Guidance Alert */}
         <div className="card glass" style={{
-          padding: '20px 24px',
+          padding: '24px',
           borderRight: '5px solid var(--accent-gold)',
-          backgroundColor: '#fffbeb'
+          backgroundColor: '#fffbeb',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
         }}>
-          <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#92400e', marginBottom: '4px' }}>💡 הנחיות עבודה קצרות:</h4>
-          <ul style={{ paddingRight: '20px', fontSize: '14px', color: '#78350f', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#92400e' }}>הנחיות עבודה קצרות:</h4>
+          </div>
+          <ul style={{ paddingRight: '20px', fontSize: '14px', color: '#78350f', display: 'flex', flexDirection: 'column', gap: '6px', listStyleType: 'disc' }}>
             <li>שינויים שתבצעו בקישורים או בהגדרות העמוד יתעדכנו <strong>מיד</strong> בעמוד הציבורי של ההורים.</li>
             <li>מומלץ לסמן קישורי הרשמה שפג תוקפם כ-<strong>לא פעיל</strong> במקום למחוק אותם, למקרה שתצטרכו להפעילם שוב בשנה הבאה.</li>
             <li>אם ברצונכם להוסיף תמונות לכרטיסי האזורים, תוכלו להזין קישור תמונה ישיר (למשל ממאגר תמונות או משרת אחסון) בטופס עריכת הכרטיס.</li>

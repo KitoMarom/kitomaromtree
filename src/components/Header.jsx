@@ -1,7 +1,7 @@
 import React from 'react';
 
 export default function Header({ settings }) {
-  const logoUrl = 'https://www.kitomarom.co.il/assets/images/logo.png';
+  const logoUrl = settings?.logo_url || 'https://www.kitomarom.co.il/assets/images/logo.png';
 
   return (
     <header className="glass" style={{

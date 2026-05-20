@@ -55,7 +55,7 @@ export default function Login({ onNavigate }) {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      backgroundColor: '#f1f5f9',
+      backgroundColor: 'var(--bg-main)',
       fontFamily: 'var(--font-family)',
       padding: '20px'
     }}>
@@ -70,7 +70,7 @@ export default function Login({ onNavigate }) {
         {/* Logo / Title */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '30px' }}>
           <img 
-            src="https://www.atarix.kitomarom.co.il/images/logo.png" 
+            src="https://www.kitomarom.co.il/assets/images/logo.png" 
             alt="קיטו מרום" 
             style={{ height: '55px', objectFit: 'contain', cursor: 'pointer' }}
             onClick={() => onNavigate('/')}
@@ -85,8 +85,25 @@ export default function Login({ onNavigate }) {
 
         {/* Error banners */}
         {error && (
-          <div style={{ padding: '12px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: 'var(--radius-sm)', marginBottom: '20px', fontSize: '14px', fontWeight: '500' }}>
-            ❌ {error}
+          <div style={{ 
+            padding: '12px 16px', 
+            backgroundColor: '#fee2e2', 
+            color: '#991b1b', 
+            borderRadius: 'var(--radius-sm)', 
+            marginBottom: '20px', 
+            fontSize: '14px', 
+            fontWeight: '600',
+            border: '1px solid #fecaca',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
 
@@ -128,9 +145,22 @@ export default function Login({ onNavigate }) {
         <button
           onClick={() => onNavigate('/')}
           className="btn btn-text w-full btn-sm"
-          style={{ marginTop: '24px', fontSize: '13px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}
+          style={{ 
+            marginTop: '24px', 
+            fontSize: '13px', 
+            borderTop: '1px solid var(--border-color)', 
+            paddingTop: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: '700'
+          }}
         >
-          ⬅️ חזרה לעמוד הציבורי
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px' }}>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          חזרה לעמוד הציבורי
         </button>
       </div>
     </div>
