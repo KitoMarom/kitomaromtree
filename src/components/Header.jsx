@@ -1,7 +1,12 @@
 import React from 'react';
 
 export default function Header({ settings }) {
-  const logoUrl = settings?.logo_url || 'https://www.kitomarom.co.il/assets/images/logo.png';
+  let logoUrl = settings?.logo_url || 'https://www.kitomarom.co.il/assets/images/logo.png';
+  
+  // Fallback override in case the database still holds the legacy atarix URL
+  if (logoUrl.includes('atarix')) {
+    logoUrl = 'https://www.kitomarom.co.il/assets/images/logo.png';
+  }
 
   return (
     <header className="glass" style={{
