@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function RegistrationCard({ card }) {
   const { area_name, display_title, description, image_url, target_url, education_level, program_type } = card;
 

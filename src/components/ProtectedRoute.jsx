@@ -1,5 +1,5 @@
-import React, { useContext, useEffect } from 'react';
-import { AuthContext } from '../App';
+import { useContext, useEffect } from 'react';
+import { AuthContext } from '../authContext';
 
 export default function ProtectedRoute({ children, requiredRole, onNavigate }) {
   const { user, role, isActive, loading } = useContext(AuthContext);

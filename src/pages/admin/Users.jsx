@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { supabase } from '../../supabaseClient';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function Users({ onNavigate }) {
@@ -38,12 +38,37 @@ export default function Users({ onNavigate }) {
   }
 
   useEffect(() => {
+    let isMounted = true;
+
     // Role-guard check: Redirect if not admin
     if (currentRole && currentRole !== 'admin') {
       onNavigate('/admin');
-      return;
+      return undefined;
     }
-    loadUsers();
+
+    async function loadInitialUsers() {
+      try {
+        setLoading(true);
+        const { data, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (profilesError) throw profilesError;
+        if (isMounted) setUsers(data || []);
+      } catch (err) {
+        console.error('Failed to load user profiles:', err);
+        if (isMounted) setError('אירעה שגיאה בטעינת רשימת משתמשי הצוות.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadInitialUsers();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentRole, onNavigate]);
 
   async function callServerlessFunction(payload) {

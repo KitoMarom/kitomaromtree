@@ -1,6 +1,6 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../authContext';
 
 export default function Login({ onNavigate }) {
   const { user, loading, refreshProfile } = useContext(AuthContext);
@@ -23,7 +23,7 @@ export default function Login({ onNavigate }) {
 
     try {
       // Login Flow
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       });

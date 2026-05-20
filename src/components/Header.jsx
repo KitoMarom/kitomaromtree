@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Header({ settings }) {
   let logoUrl = settings?.logo_url || 'https://www.kitomarom.co.il/assets/images/logo.png';
   
@@ -9,13 +7,11 @@ export default function Header({ settings }) {
   }
 
   return (
-    <header className="glass" style={{
-      position: 'sticky',
-      top: 0,
+    <header style={{
       zIndex: 100,
+      backgroundColor: '#ffffff',
       borderBottom: '1px solid var(--border-color)',
-      padding: '16px 0',
-      transition: 'var(--transition)'
+      padding: '14px 0'
     }}>
       <div className="container justify-between items-center flex" style={{ width: '100%', justifyContent: 'center' }}>
         <div className="logo-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

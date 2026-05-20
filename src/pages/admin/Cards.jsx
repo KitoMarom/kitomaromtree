@@ -1,7 +1,92 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  CheckCircle,
+  Edit3,
+  Link as LinkIcon,
+  MapPin,
+  Pause,
+  Play,
+  Plus,
+  Save
+} from 'lucide-react';
 import { supabase } from '../../supabaseClient';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
+
+const EMPTY_FORM = {
+  area_name: '',
+  display_title: '',
+  description: '',
+  target_url: '',
+  sort_order: 0,
+  is_active: true,
+  education_level: 'school'
+};
+
+const audienceLabels = {
+  school: 'בתי ספר',
+  kindergarten: 'גני ילדים',
+  both: 'בתי ספר וגני ילדים'
+};
+
+const audienceOptions = [
+  { value: 'school', label: audienceLabels.school },
+  { value: 'kindergarten', label: audienceLabels.kindergarten },
+  { value: 'both', label: audienceLabels.both }
+];
+
+function getAudienceLabel(value) {
+  return audienceLabels[value] || audienceLabels.school;
+}
+
+function truncateUrl(url) {
+  if (!url) return '';
+  return url.length > 42 ? `${url.slice(0, 42)}...` : url;
+}
+
+function groupByActivity(cards) {
+  const groups = new Map();
+
+  cards.forEach((card) => {
+    const title = (card.display_title || 'פעילות הרשמה').trim();
+    const sortOrder = Number(card.sort_order) || 0;
+
+    if (!groups.has(title)) {
+      groups.set(title, {
+        title,
+        sortOrder,
+        areas: []
+      });
+    }
+
+    const group = groups.get(title);
+    group.sortOrder = Math.min(group.sortOrder, sortOrder);
+    group.areas.push(card);
+  });
+
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      areas: group.areas.sort((first, second) => {
+        const firstOrder = Number(first.sort_order) || 0;
+        const secondOrder = Number(second.sort_order) || 0;
+
+        if (firstOrder !== secondOrder) {
+          return firstOrder - secondOrder;
+        }
+
+        return (first.area_name || '').localeCompare(second.area_name || '', 'he');
+      })
+    }))
+    .sort((first, second) => {
+      if (first.sortOrder !== second.sortOrder) {
+        return first.sortOrder - second.sortOrder;
+      }
+
+      return first.title.localeCompare(second.title, 'he');
+    });
+}
 
 export default function Cards({ onNavigate }) {
   const { user } = useContext(AuthContext);
@@ -10,21 +95,11 @@ export default function Cards({ onNavigate }) {
   const [opLoading, setOpLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-
-  // Form State (For Create & Update)
   const [showForm, setShowForm] = useState(false);
   const [editingCardId, setEditingCardId] = useState(null);
-  const [formData, setFormData] = useState({
-    area_name: '',
-    display_title: '',
-    description: '',
-    image_url: '',
-    target_url: '',
-    sort_order: 0,
-    is_active: true,
-    education_level: 'school',
-    program_type: 'after_school'
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
 
   async function loadCards() {
     try {
@@ -37,16 +112,46 @@ export default function Cards({ onNavigate }) {
       if (cardsError) throw cardsError;
       setCards(data || []);
     } catch (err) {
-      console.error('Failed to load cards:', err);
-      setError('אירעה שגיאה בטעינת כרטיסי הרישום.');
+      console.error('Failed to load registrations:', err);
+      setError('אירעה שגיאה בטעינת הפעילויות והאזורים.');
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadCards();
+    let isMounted = true;
+
+    async function loadInitialCards() {
+      try {
+        setLoading(true);
+        const { data, error: cardsError } = await supabase
+          .from('registration_cards')
+          .select('*')
+          .order('sort_order', { ascending: true });
+
+        if (cardsError) throw cardsError;
+        if (isMounted) setCards(data || []);
+      } catch (err) {
+        console.error('Failed to load registrations:', err);
+        if (isMounted) setError('אירעה שגיאה בטעינת הפעילויות והאזורים.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadInitialCards();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  function resetForm() {
+    setFormData(EMPTY_FORM);
+    setEditingCardId(null);
+    setShowForm(false);
+  }
 
   function handleEditClick(card) {
     setEditingCardId(card.id);
@@ -54,91 +159,89 @@ export default function Cards({ onNavigate }) {
       area_name: card.area_name || '',
       display_title: card.display_title || '',
       description: card.description || '',
-      image_url: card.image_url || '',
       target_url: card.target_url || '',
       sort_order: card.sort_order || 0,
       is_active: card.is_active !== undefined ? card.is_active : true,
-      education_level: card.education_level || 'school',
-      program_type: card.program_type || 'after_school'
+      education_level: card.education_level || 'school'
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function handleCancelForm() {
-    setShowForm(false);
-    setEditingCardId(null);
-    setFormData({
-      area_name: '',
-      display_title: '',
-      description: '',
-      image_url: '',
-      target_url: '',
-      sort_order: 0,
-      is_active: true,
-      education_level: 'school',
-      program_type: 'after_school'
+  function buildPayload() {
+    return {
+      area_name: formData.area_name.trim(),
+      display_title: formData.display_title.trim(),
+      description: formData.description.trim(),
+      target_url: formData.target_url.trim(),
+      sort_order: Number(formData.sort_order) || 0,
+      is_active: formData.is_active,
+      education_level: formData.education_level
+    };
+  }
+
+  async function writeAuditLog(action, entityId, details) {
+    if (!user?.id) return;
+
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      action,
+      entity_type: 'registration_cards',
+      entity_id: entityId,
+      details
     });
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
     setError(null);
     setMessage(null);
     setOpLoading(true);
 
     try {
+      const payload = buildPayload();
+
       if (editingCardId) {
-        // UPDATE Existing Card
         const { error: updateError } = await supabase
           .from('registration_cards')
           .update({
-            ...formData,
+            ...payload,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingCardId);
 
         if (updateError) throw updateError;
 
-        // Log audit
-        await supabase.from('audit_logs').insert({
-          user_id: user.id,
-          action: 'UPDATE_CARD',
-          entity_type: 'registration_cards',
-          entity_id: editingCardId,
-          details: `Updated card for area: ${formData.area_name}`
-        });
+        await writeAuditLog(
+          'UPDATE_ACTIVITY_AREA',
+          editingCardId,
+          `Updated ${payload.area_name} for activity ${payload.display_title}`
+        );
 
-        setMessage('קישור ההרשמה עודכן בהצלחה!');
+        setMessage('האזור עודכן בהצלחה.');
       } else {
-        // CREATE New Card
         const { data: newCard, error: insertError } = await supabase
           .from('registration_cards')
-          .insert({
-            ...formData
-          })
+          .insert(payload)
           .select()
           .single();
 
         if (insertError) throw insertError;
 
-        // Log audit
-        await supabase.from('audit_logs').insert({
-          user_id: user.id,
-          action: 'CREATE_CARD',
-          entity_type: 'registration_cards',
-          entity_id: newCard.id,
-          details: `Created new card for area: ${formData.area_name}`
-        });
+        await writeAuditLog(
+          'CREATE_ACTIVITY_AREA',
+          newCard.id,
+          `Created ${payload.area_name} for activity ${payload.display_title}`
+        );
 
-        setMessage('קישור הרשמה לאזור חדש נוסף בהצלחה!');
+        setMessage('האזור נוסף לפעילות בהצלחה.');
       }
 
-      handleCancelForm();
+      resetForm();
       await loadCards();
     } catch (err) {
       console.error('Operation failed:', err);
-      setError(err.message || 'אירעה שגיאה בביצוע הפעולה.');
+      setError(err.message || 'אירעה שגיאה בשמירת הפעילות.');
     } finally {
       setOpLoading(false);
     }
@@ -152,377 +255,345 @@ export default function Cards({ onNavigate }) {
       const nextActiveState = !card.is_active;
       const { error: updateError } = await supabase
         .from('registration_cards')
-        .update({ is_active: nextActiveState })
+        .update({
+          is_active: nextActiveState,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', card.id);
 
       if (updateError) throw updateError;
 
-      // Log audit
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        action: nextActiveState ? 'ACTIVATE_CARD' : 'DEACTIVATE_CARD',
-        entity_type: 'registration_cards',
-        entity_id: card.id,
-        details: `${nextActiveState ? 'Activated' : 'Deactivated'} card for area ${card.area_name}`
-      });
+      await writeAuditLog(
+        nextActiveState ? 'ACTIVATE_ACTIVITY_AREA' : 'DEACTIVATE_ACTIVITY_AREA',
+        card.id,
+        `${nextActiveState ? 'Activated' : 'Deactivated'} ${card.area_name} for activity ${card.display_title}`
+      );
 
-      setMessage(`הכרטיס עבור "${card.area_name}" ${nextActiveState ? 'הופעל והוא מוצג כעת להורים' : 'הושבת והוסר מהעמוד הציבורי'}.`);
+      setMessage(`האזור "${card.area_name}" ${nextActiveState ? 'הופעל ויוצג להורים' : 'כובה והוסר מהעמוד הציבורי'}.`);
       await loadCards();
     } catch (err) {
       console.error('Toggle failed:', err);
-      setError('שגיאה בשינוי מצב כרטיס.');
+      setError('שגיאה בשינוי מצב האזור.');
     }
   }
 
   return (
     <AdminLayout currentPath="/admin/cards" onNavigate={onNavigate}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-        {/* Header */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-              ניהול קישורי הרשמה לקייטנות וצהרונים
+              ניהול פעילויות ואזורים
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
-              הוסיפו, עדכנו או השביתו קישורי רישום לפי ערים/אזורים. סידור הכרטיסים מבוצע לפי שדה "סדר הופעה".
+              כל פעילות יכולה להכיל כמה אזורים. לכל אזור מגדירים קישור הרשמה, קהל יעד ותיאור מלא.
             </p>
           </div>
-          
+
           {!showForm && (
-            <button 
-              onClick={() => setShowForm(true)} 
+            <button
+              onClick={() => setShowForm(true)}
               className="btn btn-primary"
-              style={{ fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ fontWeight: '700' }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              הוספת אזור וקישור חדש
+              <Plus size={18} />
+              הוספת אזור לפעילות
             </button>
           )}
         </div>
 
-        {/* Messaging */}
         {message && (
-          <div style={{ 
-            padding: '14px 18px', 
-            backgroundColor: '#d1fae5', 
-            color: '#065f46', 
-            borderRadius: 'var(--radius-md)', 
-            fontWeight: '600',
+          <div style={{
+            padding: '14px 18px',
+            backgroundColor: '#d1fae5',
+            color: '#065f46',
+            borderRadius: 'var(--radius-md)',
+            fontWeight: '700',
             border: '1px solid #a7f3d0',
             display: 'flex',
             alignItems: 'center',
             gap: '10px'
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+            <CheckCircle size={18} />
             <span>{message}</span>
           </div>
         )}
+
         {error && (
-          <div style={{ 
-            padding: '14px 18px', 
-            backgroundColor: '#fee2e2', 
-            color: '#991b1b', 
-            borderRadius: 'var(--radius-md)', 
-            fontWeight: '600',
+          <div style={{
+            padding: '14px 18px',
+            backgroundColor: '#fee2e2',
+            color: '#991b1b',
+            borderRadius: 'var(--radius-md)',
+            fontWeight: '700',
             border: '1px solid #fecaca',
             display: 'flex',
             alignItems: 'center',
             gap: '10px'
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <AlertCircle size={18} />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Edit / Create Form Panel */}
         {showForm && (
-          <div className="card glass" style={{ borderRight: '6px solid var(--primary-purple)', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#ffffff' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                {editingCardId ? (
-                  <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                ) : (
-                  <>
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </>
-                )}
-              </svg>
-              {editingCardId ? 'עריכת פרטי קישור רישום' : 'הוספת אזור וקישור הרשמה חדש'}
-            </h3>
+          <form
+            onSubmit={handleSubmit}
+            className="card"
+            style={{ display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#ffffff' }}
+          >
+            <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+              {editingCardId ? 'עריכת אזור בפעילות' : 'הוספת אזור לפעילות'}
+            </h2>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">שם האזור / עיר</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="form-control"
-                    placeholder="לדוגמה: טירת הכרמל"
-                    value={formData.area_name}
-                    onChange={e => setFormData({ ...formData, area_name: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">כותרת הכרטיס לתצוגה</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="form-control"
-                    placeholder="לדוגמה: הרשמה לצהרוני גני ילדים תשפ''ו"
-                    value={formData.display_title}
-                    onChange={e => setFormData({ ...formData, display_title: e.target.value })}
-                  />
-                </div>
-              </div>
-
+            <div className="form-row">
               <div className="form-group">
-                <label className="form-label">תיאור קצר להורים (אופציונלי)</label>
-                <textarea 
+                <label className="form-label">שם הפעילות</label>
+                <input
+                  type="text"
+                  required
                   className="form-control"
-                  rows="2"
-                  placeholder="לדוגמה: צהרונים איכותיים הפועלים בתוך הגנים העירוניים עם ארוחה חמה..."
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  placeholder={'לדוגמה: הרשמה לקייטנת קיץ תשפ"ו'}
+                  value={formData.display_title}
+                  onChange={(event) => setFormData({ ...formData, display_title: event.target.value })}
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">כתובת קישור ההרשמה (Target URL)</label>
-                <input 
-                  type="url" 
-                  required 
+                <label className="form-label">שם האזור</label>
+                <input
+                  type="text"
+                  required
                   className="form-control"
-                  placeholder="https://registration-system.co.il/my-area"
-                  value={formData.target_url}
-                  onChange={e => setFormData({ ...formData, target_url: e.target.value })}
+                  placeholder="לדוגמה: חריש"
+                  value={formData.area_name}
+                  onChange={(event) => setFormData({ ...formData, area_name: event.target.value })}
                 />
               </div>
+            </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">מוסד חינוכי</label>
-                  <select 
-                    className="form-control"
-                    value={formData.education_level}
-                    onChange={e => setFormData({ ...formData, education_level: e.target.value })}
-                  >
-                    <option value="school">בתי ספר</option>
-                    <option value="kindergarten">גני ילדים</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">סוג פעילות</label>
-                  <select 
-                    className="form-control"
-                    value={formData.program_type}
-                    onChange={e => setFormData({ ...formData, program_type: e.target.value })}
-                  >
-                    <option value="after_school">צהרונים</option>
-                    <option value="camp">קייטנות</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">קישור לתמונה לכרטיס (אופציונלי)</label>
-                  <input 
-                    type="url" 
-                    className="form-control"
-                    placeholder="https://example.com/card-image.jpg"
-                    value={formData.image_url}
-                    onChange={e => setFormData({ ...formData, image_url: e.target.value })}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">סדר הופעה (מספר נמוך יותר יופיע קודם)</label>
-                  <input 
-                    type="number" 
-                    required 
-                    className="form-control"
-                    value={formData.sort_order}
-                    onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">מיועד עבור</label>
+                <select
+                  className="form-control"
+                  value={formData.education_level}
+                  onChange={(event) => setFormData({ ...formData, education_level: event.target.value })}
+                >
+                  {audienceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
-                <label className="form-checkbox">
-                  <input 
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
-                  />
-                  הגדר כרטיס זה כפעיל כעת (יוצג מיד להורים בעמוד הראשי)
-                </label>
+                <label className="form-label">סדר הופעה</label>
+                <input
+                  type="number"
+                  required
+                  className="form-control"
+                  value={formData.sort_order}
+                  onChange={(event) => setFormData({ ...formData, sort_order: event.target.value })}
+                />
               </div>
+            </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
-                <button type="button" onClick={handleCancelForm} className="btn btn-text">ביטול</button>
-                <button type="submit" disabled={opLoading} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {opLoading ? 'שומר...' : (
-                    <>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                        <polyline points="17 21 17 13 7 13 7 21" />
-                        <polyline points="7 3 7 8 15 8" />
-                      </svg>
-                      שמור קישור רישום
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="form-group">
+              <label className="form-label">תיאור מלא שיוצג להורים באזור הזה</label>
+              <textarea
+                required
+                className="form-control"
+                rows="5"
+                placeholder="כתבו כאן את כל הפרטים שההורה צריך לראות לפני מעבר להרשמה."
+                value={formData.description}
+                onChange={(event) => setFormData({ ...formData, description: event.target.value })}
+                style={{ resize: 'vertical', minHeight: '140px' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">קישור להרשמה</label>
+              <input
+                type="url"
+                required
+                className="form-control"
+                placeholder="https://registration-system.co.il/my-area"
+                value={formData.target_url}
+                onChange={(event) => setFormData({ ...formData, target_url: event.target.value })}
+              />
+            </div>
+
+            <label className="form-checkbox">
+              <input
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(event) => setFormData({ ...formData, is_active: event.target.checked })}
+              />
+              אזור פעיל ומוצג להורים
+            </label>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
+              <button type="button" onClick={resetForm} className="btn btn-text">ביטול</button>
+              <button type="submit" disabled={opLoading} className="btn btn-primary">
+                <Save size={18} />
+                {opLoading ? 'שומר...' : 'שמירת אזור'}
+              </button>
+            </div>
+          </form>
         )}
 
-        {/* List of cards */}
         {loading ? (
-          <div>טוען רשימת קישורים...</div>
+          <div>טוען פעילויות ואזורים...</div>
         ) : cards.length === 0 ? (
           <div className="card text-center" style={{ padding: '50px 20px', backgroundColor: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px', color: 'var(--text-muted)' }}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-              </svg>
-            </div>
-            <h3 style={{ fontSize: '18px', color: 'var(--text-muted)', marginTop: '8px' }}>טרם הוגדרו אזורי רישום</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>לחצו על הכפתור בפינה השמאלית העליונה כדי להוסיף את האזור הראשון.</p>
+            <h2 style={{ fontSize: '20px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+              טרם הוגדרו פעילויות.
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>
+              הוסיפו פעילות ראשונה ואז צרפו אליה את האזורים הרלוונטיים.
+            </p>
           </div>
         ) : (
-          <div className="card" style={{ padding: 0, overflow: 'hidden', backgroundColor: '#ffffff' }}>
-            <div className="table-responsive">
-              <table style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-                textAlign: 'right'
-              }}>
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--primary-light)', borderBottom: '2px solid var(--border-color)' }}>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px' }}>מיקום / סדר</th>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px' }}>שם האזור</th>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px' }}>כותרת לתצוגה</th>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px' }}>כתובת יעד (קישור)</th>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px', textAlign: 'center' }}>סטטוס</th>
-                    <th style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--primary-dark)', fontSize: '14px', textAlign: 'center' }}>פעולות</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cards.map((card) => (
-                    <tr key={card.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition)' }} className="table-row-hover">
-                      {/* Sort Badge / Value */}
-                      <td style={{ padding: '16px 20px', fontSize: '14px' }}>
-                        <span className="badge badge-primary" style={{ fontWeight: '700' }}>#{card.sort_order}</span>
-                      </td>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {activityGroups.map((activity) => (
+              <section
+                key={activity.title}
+                className="card"
+                style={{ padding: 0, overflow: 'hidden', backgroundColor: '#ffffff' }}
+              >
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                  padding: '20px 22px',
+                  borderBottom: '1px solid var(--border-color)'
+                }}>
+                  <div>
+                    <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+                      {activity.title}
+                    </h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
+                      {activity.areas.length} אזורים בפעילות
+                    </p>
+                  </div>
 
-                      {/* Area Badge */}
-                      <td style={{ padding: '16px 20px', fontWeight: '700', fontSize: '15px', color: 'var(--primary-dark)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                          {card.area_name}
-                        </span>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                          <span className="badge badge-primary" style={{ fontSize: '11px', padding: '2px 8px' }}>
-                            {card.education_level === 'school' ? 'בתי ספר' : 'גני ילדים'}
-                          </span>
-                          <span className="badge badge-primary" style={{ fontSize: '11px', padding: '2px 8px', backgroundColor: '#e0f2fe', color: '#0369a1' }}>
-                            {card.program_type === 'after_school' ? 'צהרונים' : 'קייטנות'}
-                          </span>
-                        </div>
-                      </td>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setFormData({
+                        ...EMPTY_FORM,
+                        display_title: activity.title,
+                        sort_order: activity.sortOrder
+                      });
+                      setEditingCardId(null);
+                      setShowForm(true);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <Plus size={15} />
+                    הוספת אזור לפעילות
+                  </button>
+                </div>
 
-                      {/* Display Title */}
-                      <td style={{ padding: '16px 20px', fontSize: '14px', color: 'var(--text-dark)', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {card.display_title}
-                      </td>
+                <div className="table-responsive">
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    textAlign: 'right'
+                  }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'var(--primary-light)', borderBottom: '1px solid var(--border-color)' }}>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>אזור</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>מיועד עבור</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>תיאור</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>קישור</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px', textAlign: 'center' }}>סטטוס</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px', textAlign: 'center' }}>פעולות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activity.areas.map((card) => (
+                        <tr key={card.id} style={{ borderBottom: '1px solid var(--border-color)' }} className="table-row-hover">
+                          <td style={{ padding: '16px 18px', fontSize: '15px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                              <MapPin size={16} color="var(--primary-purple)" />
+                              {card.area_name}
+                            </span>
+                          </td>
 
-                      {/* Target Link */}
-                      <td style={{ padding: '16px 20px', fontSize: '13px', direction: 'ltr', textAlign: 'right' }}>
-                        <a 
-                          href={card.target_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          style={{ color: 'var(--primary-purple)', textDecoration: 'underline' }}
-                        >
-                          {card.target_url.length > 35 ? `${card.target_url.slice(0, 35)}...` : card.target_url}
-                        </a>
-                      </td>
+                          <td style={{ padding: '16px 18px', fontSize: '14px' }}>
+                            <span className="badge badge-primary">
+                              {getAudienceLabel(card.education_level)}
+                            </span>
+                          </td>
 
-                      {/* Active Status Badge */}
-                      <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                        <span className={`badge ${card.is_active ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '12px' }}>
-                          {card.is_active ? 'פעיל בעמוד' : 'כבוי / מושבת'}
-                        </span>
-                      </td>
+                          <td style={{
+                            padding: '16px 18px',
+                            fontSize: '14px',
+                            color: 'var(--text-dark)',
+                            maxWidth: '320px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {card.description || 'אין תיאור'}
+                          </td>
 
-                      {/* Actions */}
-                      <td style={{ padding: '16px 20px', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button 
-                          onClick={() => handleEditClick(card)} 
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                          עריכה
-                        </button>
-                        
-                        <button 
-                          onClick={() => handleToggleActive(card)} 
-                          className={`btn btn-sm ${card.is_active ? 'btn-outline' : 'btn-primary'}`}
-                          style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                        >
-                          {card.is_active ? (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="6" y="4" width="4" height="16" />
-                                <rect x="14" y="4" width="4" height="16" />
-                              </svg>
-                              השבתה
-                            </>
-                          ) : (
-                            <>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="5 3 19 12 5 21 5 3" />
-                              </svg>
-                              הפעלה
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <style>{`
-                .table-row-hover:hover {
-                  background-color: #f8fafc;
-                }
-              `}</style>
-            </div>
+                          <td style={{ padding: '16px 18px', fontSize: '13px', direction: 'ltr', textAlign: 'right' }}>
+                            <a
+                              href={card.target_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: 'var(--primary-purple)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              <LinkIcon size={14} />
+                              {truncateUrl(card.target_url)}
+                            </a>
+                          </td>
+
+                          <td style={{ padding: '16px 18px', textAlign: 'center' }}>
+                            <span className={`badge ${card.is_active ? 'badge-success' : 'badge-danger'}`}>
+                              {card.is_active ? 'פעיל' : 'כבוי'}
+                            </span>
+                          </td>
+
+                          <td style={{ padding: '16px 18px' }}>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                              <button
+                                onClick={() => handleEditClick(card)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '7px 12px', fontSize: '13px' }}
+                              >
+                                <Edit3 size={14} />
+                                עריכה
+                              </button>
+
+                              <button
+                                onClick={() => handleToggleActive(card)}
+                                className={`btn btn-sm ${card.is_active ? 'btn-outline' : 'btn-primary'}`}
+                                style={{ padding: '7px 12px', fontSize: '13px' }}
+                              >
+                                {card.is_active ? <Pause size={14} /> : <Play size={14} />}
+                                {card.is_active ? 'כיבוי' : 'הפעלה'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
+
+            <style>{`
+              .table-row-hover:hover {
+                background-color: #f8fafc;
+              }
+            `}</style>
           </div>
         )}
       </div>

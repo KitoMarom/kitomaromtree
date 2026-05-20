@@ -1,5 +1,6 @@
-import React, { useState, useEffect, createContext } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { AuthContext } from './authContext';
 
 // Import Pages
 import PublicPage from './pages/PublicPage';
@@ -12,16 +13,6 @@ import NotFound from './pages/NotFound';
 
 // Import Guard
 import ProtectedRoute from './components/ProtectedRoute';
-
-// Create Auth Context
-export const AuthContext = createContext({
-  user: null,
-  role: null,
-  isActive: false,
-  loading: true,
-  logout: () => {},
-  refreshProfile: () => {}
-});
 
 function App() {
   const [path, setPath] = useState(window.location.pathname);
@@ -113,9 +104,14 @@ function App() {
 
   // Routing Handler
   const renderRoute = () => {
+    if (path.startsWith('/registration/')) {
+      const registrationId = decodeURIComponent(path.replace('/registration/', '').split('/')[0]);
+      return <PublicPage registrationId={registrationId} onNavigate={navigate} />;
+    }
+
     switch (path) {
       case '/':
-        return <PublicPage />;
+        return <PublicPage onNavigate={navigate} />;
       
       case '/admin/login':
         return <Login onNavigate={navigate} />;

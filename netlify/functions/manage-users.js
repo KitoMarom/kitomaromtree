@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-export async function handler(event, context) {
+export async function handler(event) {
   // Enable CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',

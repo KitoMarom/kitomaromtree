@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Footer({ settings }) {
   const footerText = settings?.footer_text || 'כל הזכויות שמורות לקיטו מרום © 2026';
   const companyName = settings?.company_name || 'קיטו מרום הדרכה טכנולוגית בע"מ';

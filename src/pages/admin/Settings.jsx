@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { supabase } from '../../supabaseClient';
-import { AuthContext } from '../../App';
+import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
 
 export default function Settings({ onNavigate }) {
