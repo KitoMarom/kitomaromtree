@@ -8,7 +8,8 @@ import {
   Pause,
   Play,
   Plus,
-  Save
+  Save,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { AuthContext } from '../../authContext';
@@ -100,6 +101,7 @@ export default function Cards({ onNavigate }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
+  const isAddingAreaToExistingActivity = !editingCardId && Boolean(formData.display_title.trim());
 
   async function loadCards() {
     try {
@@ -277,6 +279,86 @@ export default function Cards({ onNavigate }) {
     }
   }
 
+  async function handleDeleteArea(card) {
+    const approved = window.confirm(
+      `למחוק את האזור "${card.area_name}" מתוך הפעילות "${card.display_title}"? הפעולה לא ניתנת לביטול.`
+    );
+
+    if (!approved) return;
+
+    setError(null);
+    setMessage(null);
+    setOpLoading(true);
+
+    try {
+      await writeAuditLog(
+        'DELETE_ACTIVITY_AREA',
+        card.id,
+        `Deleted ${card.area_name} from activity ${card.display_title}`
+      );
+
+      const { error: deleteError } = await supabase
+        .from('registration_cards')
+        .delete()
+        .eq('id', card.id);
+
+      if (deleteError) throw deleteError;
+
+      if (editingCardId === card.id) {
+        resetForm();
+      }
+
+      setMessage(`האזור "${card.area_name}" נמחק מהפעילות.`);
+      await loadCards();
+    } catch (err) {
+      console.error('Delete area failed:', err);
+      setError(err.message || 'אירעה שגיאה במחיקת האזור.');
+    } finally {
+      setOpLoading(false);
+    }
+  }
+
+  async function handleDeleteActivity(activity) {
+    const approved = window.confirm(
+      `למחוק את הפעילות "${activity.title}" ואת כל ${activity.areas.length} האזורים שבתוכה? הפעולה לא ניתנת לביטול.`
+    );
+
+    if (!approved) return;
+
+    setError(null);
+    setMessage(null);
+    setOpLoading(true);
+
+    try {
+      const areaIds = activity.areas.map((area) => area.id);
+
+      await writeAuditLog(
+        'DELETE_ACTIVITY',
+        areaIds[0],
+        `Deleted activity ${activity.title} with ${activity.areas.length} areas`
+      );
+
+      const { error: deleteError } = await supabase
+        .from('registration_cards')
+        .delete()
+        .in('id', areaIds);
+
+      if (deleteError) throw deleteError;
+
+      if (areaIds.includes(editingCardId)) {
+        resetForm();
+      }
+
+      setMessage(`הפעילות "${activity.title}" נמחקה יחד עם כל האזורים שלה.`);
+      await loadCards();
+    } catch (err) {
+      console.error('Delete activity failed:', err);
+      setError(err.message || 'אירעה שגיאה במחיקת הפעילות.');
+    } finally {
+      setOpLoading(false);
+    }
+  }
+
   return (
     <AdminLayout currentPath="/admin/cards" onNavigate={onNavigate}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -297,7 +379,7 @@ export default function Cards({ onNavigate }) {
               style={{ fontWeight: '700' }}
             >
               <Plus size={18} />
-              הוספת אזור לפעילות
+              הוספת פעילות חדשה
             </button>
           )}
         </div>
@@ -343,7 +425,11 @@ export default function Cards({ onNavigate }) {
             style={{ display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#ffffff' }}
           >
             <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
-              {editingCardId ? 'עריכת אזור בפעילות' : 'הוספת אזור לפעילות'}
+              {editingCardId
+                ? 'עריכת אזור בפעילות'
+                : isAddingAreaToExistingActivity
+                  ? 'הוספת אזור לפעילות קיימת'
+                  : 'הוספת פעילות חדשה'}
             </h2>
 
             <div className="form-row">
@@ -479,23 +565,36 @@ export default function Cards({ onNavigate }) {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setFormData({
-                        ...EMPTY_FORM,
-                        display_title: activity.title,
-                        sort_order: activity.sortOrder
-                      });
-                      setEditingCardId(null);
-                      setShowForm(true);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  >
-                    <Plus size={15} />
-                    הוספת אזור לפעילות
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setFormData({
+                          ...EMPTY_FORM,
+                          display_title: activity.title,
+                          sort_order: activity.sortOrder
+                        });
+                        setEditingCardId(null);
+                        setShowForm(true);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <Plus size={15} />
+                      הוספת אזור לפעילות
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      disabled={opLoading}
+                      onClick={() => handleDeleteActivity(activity)}
+                      style={{ padding: '8px 14px', fontSize: '13px', fontWeight: '700' }}
+                    >
+                      <Trash2 size={15} />
+                      מחיקת פעילות
+                    </button>
+                  </div>
                 </div>
 
                 <div className="table-responsive">
@@ -574,10 +673,21 @@ export default function Cards({ onNavigate }) {
                               <button
                                 onClick={() => handleToggleActive(card)}
                                 className={`btn btn-sm ${card.is_active ? 'btn-outline' : 'btn-primary'}`}
+                                disabled={opLoading}
                                 style={{ padding: '7px 12px', fontSize: '13px' }}
                               >
                                 {card.is_active ? <Pause size={14} /> : <Play size={14} />}
                                 {card.is_active ? 'כיבוי' : 'הפעלה'}
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteArea(card)}
+                                className="btn btn-danger btn-sm"
+                                disabled={opLoading}
+                                style={{ padding: '7px 12px', fontSize: '13px' }}
+                              >
+                                <Trash2 size={14} />
+                                מחיקה
                               </button>
                             </div>
                           </td>
