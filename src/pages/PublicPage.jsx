@@ -84,12 +84,20 @@ export default function PublicPage() {
 
   const heroImage = settings?.hero_image_url || `https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1200&auto=format&fit=crop`;
 
-  // Extract unique areas from active cards
-  const uniqueAreas = Array.from(new Set(cards.map(c => c.area_name).filter(Boolean)));
+  // Extract unique areas from active cards, supporting comma/slash separated lists
+  const uniqueAreas = Array.from(
+    new Set(
+      cards
+        .flatMap(c => c.area_name ? c.area_name.split(/[,/]/).map(s => s.trim()) : [])
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'he'));
 
   // Filter logic
   const filteredCards = cards.filter(card => {
-    const matchesArea = !selectedArea || card.area_name === selectedArea;
+    const cardAreas = card.area_name ? card.area_name.split(/[,/]/).map(s => s.trim()) : [];
+    const matchesArea = !selectedArea || cardAreas.includes(selectedArea);
+    
     const cardLevel = card.education_level || 'school';
     const cardActivity = card.program_type || 'after_school';
     

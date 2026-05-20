@@ -22,19 +22,55 @@ export default function RegistrationCard({ card }) {
       borderRadius: 'var(--radius-md)',
       position: 'relative'
     }}>
-      {/* Area Badge floating on top of image */}
-      <span className="badge badge-primary" style={{
+      {/* Area Badges floating on top of image */}
+      <div style={{
         position: 'absolute',
         top: '16px',
         right: '16px',
-        fontSize: '14px',
-        padding: '6px 14px',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        gap: '6px',
         zIndex: 2,
-        fontWeight: '700'
+        maxWidth: 'calc(100% - 32px)',
+        direction: 'rtl'
       }}>
-        {area_name}
-      </span>
+        {(() => {
+          const areas = area_name ? area_name.split(/[,/]/).map(s => s.trim()).filter(Boolean) : [];
+          const maxBadges = 2;
+          const displayedAreas = areas.slice(0, maxBadges);
+          const extraCount = areas.length - maxBadges;
+          
+          return (
+            <>
+              {displayedAreas.map((area, idx) => (
+                <span key={idx} className="badge badge-primary" style={{
+                  fontSize: '13px',
+                  padding: '4px 10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  fontWeight: '700',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {area}
+                </span>
+              ))}
+              {extraCount > 0 && (
+                <span className="badge" style={{
+                  fontSize: '13px',
+                  padding: '4px 10px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  fontWeight: '700',
+                  backgroundColor: 'var(--primary-dark)',
+                  color: 'white',
+                  whiteSpace: 'nowrap'
+                }}>
+                  +{extraCount} רשויות
+                </span>
+              )}
+            </>
+          );
+        })()}
+      </div>
 
       {/* Card Visual Header */}
       <div style={{
