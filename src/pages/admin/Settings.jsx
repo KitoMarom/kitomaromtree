@@ -4,20 +4,11 @@ import { AuthContext } from '../../authContext';
 import AdminLayout from '../../components/AdminLayout';
 import { clearAdminDraft, readAdminDraft, writeAdminDraft } from '../../utils/adminDrafts';
 
-const SETTINGS_DRAFT_KEY = 'kito-admin-settings-draft-v1';
+const SETTINGS_DRAFT_KEY = 'kito-admin-settings-draft-v2';
 
 const EMPTY_SETTINGS_FORM = {
   page_title: '',
-  page_subtitle: '',
-  intro_text: '',
-  logo_url: '',
-  hero_image_url: '',
-  company_name: '',
-  office_address: '',
-  po_box: '',
-  contact_phone: '',
-  contact_fax: '',
-  footer_text: ''
+  logo_url: ''
 };
 
 export default function Settings({ onNavigate }) {
@@ -45,16 +36,7 @@ export default function Settings({ onNavigate }) {
         if (data) {
           const databaseFormData = {
             page_title: data.page_title || '',
-            page_subtitle: data.page_subtitle || '',
-            intro_text: data.intro_text || '',
-            logo_url: data.logo_url || '',
-            hero_image_url: data.hero_image_url || '',
-            company_name: data.company_name || 'קיטו מרום הדרכה טכנולוגית בע"מ',
-            office_address: data.office_address || 'מתחם INTRO, רחוב האורזים 2 נתניה.',
-            po_box: data.po_box || 'ת.ד. 2356, נתניה 42120',
-            contact_phone: data.contact_phone || '09-8344840',
-            contact_fax: data.contact_fax || '09-8344841',
-            footer_text: data.footer_text || ''
+            logo_url: data.logo_url || ''
           };
           const draft = readAdminDraft(SETTINGS_DRAFT_KEY);
 
@@ -97,7 +79,8 @@ export default function Settings({ onNavigate }) {
       const { error: updateError } = await supabase
         .from('page_settings')
         .update({
-          ...formData,
+          page_title: formData.page_title,
+          logo_url: formData.logo_url,
           updated_at: new Date().toISOString()
         })
         .eq('id', '00000000-0000-0000-0000-000000000000');
@@ -113,7 +96,7 @@ export default function Settings({ onNavigate }) {
         details: 'Updated public page settings parameters'
       });
 
-      setMessage('הגדרות העמוד עודכנו בהצלחה ופורסמו להורים! ✨');
+      setMessage('הגדרות העמוד עודכנו בהצלחה ופורסמו להורים.');
       clearAdminDraft(SETTINGS_DRAFT_KEY);
       setSettingsDraftDirty(false);
     } catch (err) {
@@ -138,7 +121,7 @@ export default function Settings({ onNavigate }) {
               הגדרות עמוד ההרשמה הציבורי
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
-              כאן תוכלו לערוך את כותרות העמוד הראשי, לוגו החברה, פרטי יצירת הקשר והתוכן המוצג להורים.
+              כאן מנהלים רק את הפרטים שמופיעים כרגע בעמוד ההורים.
             </p>
           </div>
         </div>
@@ -187,13 +170,29 @@ export default function Settings({ onNavigate }) {
         {loading ? (
           <div>טוען הגדרות עמוד...</div>
         ) : (
-          <form onSubmit={handleSave} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '24px', backgroundColor: '#ffffff' }}>
-            <h3 style={{ fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
-              טקסטים וכותרות
+          <form
+            onSubmit={handleSave}
+            className="card"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '22px',
+              maxWidth: '760px',
+              backgroundColor: '#ffffff'
+            }}
+          >
+            <h3 style={{
+              fontSize: '19px',
+              fontWeight: '800',
+              color: 'var(--primary-purple)',
+              borderBottom: '1px solid #f1f5f9',
+              paddingBottom: '12px'
+            }}>
+              הגדרות בסיסיות
             </h3>
 
             <div className="form-group">
-              <label className="form-label">כותרת עמוד ראשית</label>
+              <label className="form-label">כותרת העמוד להורים</label>
               <input 
                 type="text" 
                 required 
@@ -205,136 +204,13 @@ export default function Settings({ onNavigate }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">כותרת משנה</label>
+              <label className="form-label">קישור ללוגו</label>
               <input 
-                type="text" 
-                required 
+                type="url" 
                 className="form-control"
-                value={formData.page_subtitle}
-                onChange={e => updateFormData({ page_subtitle: e.target.value })}
-                placeholder="לדוגמה: בחרו את האיזור המבוקש כדי להירשם"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">טקסט הסבר / פתיח (אופציונלי)</label>
-              <textarea 
-                className="form-control" 
-                rows="3"
-                value={formData.intro_text}
-                onChange={e => updateFormData({ intro_text: e.target.value })}
-                placeholder="טקסט הסבר קצר על פעילות החברה שיוצג בראש העמוד..."
-                style={{ resize: 'vertical', minHeight: '80px' }}
-              />
-            </div>
-
-            <h3 style={{ fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginTop: '10px' }}>
-              לוגו ונראות ויזואלית
-            </h3>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">קישור ללוגו (Logo URL)</label>
-                <input 
-                  type="url" 
-                  className="form-control"
-                  value={formData.logo_url}
-                  onChange={e => updateFormData({ logo_url: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">קישור לתמונת רקע/גיבור (Hero Cover URL)</label>
-                <input 
-                  type="url" 
-                  className="form-control"
-                  value={formData.hero_image_url}
-                  onChange={e => updateFormData({ hero_image_url: e.target.value })}
-                  placeholder="https://example.com/hero.jpg"
-                />
-              </div>
-            </div>
-
-            <h3 style={{ fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', marginTop: '10px' }}>
-              פרטי קשר וכותרת תחתונה
-            </h3>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">שם החברה</label>
-                <input 
-                  type="text" 
-                  required
-                  className="form-control"
-                  value={formData.company_name}
-                  onChange={e => updateFormData({ company_name: e.target.value })}
-                  placeholder={"קיטו מרום הדרכה טכנולוגית בע\"מ"}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">כתובת פיזית במשרד</label>
-                <input 
-                  type="text" 
-                  required
-                  className="form-control"
-                  value={formData.office_address}
-                  onChange={e => updateFormData({ office_address: e.target.value })}
-                  placeholder="מתחם INTRO, רחוב האורזים 2 נתניה."
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">מען למכתבים (ת.ד.)</label>
-                <input 
-                  type="text" 
-                  required
-                  className="form-control"
-                  value={formData.po_box}
-                  onChange={e => updateFormData({ po_box: e.target.value })}
-                  placeholder="ת.ד. 2356, נתניה 42120"
-                />
-              </div>
-
-              <div className="form-row-nested" style={{ display: 'flex', gap: '16px', flex: 1 }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">טלפון במשרד</label>
-                  <input 
-                    type="text" 
-                    required
-                    className="form-control"
-                    value={formData.contact_phone}
-                    onChange={e => updateFormData({ contact_phone: e.target.value })}
-                    placeholder="09-8344840"
-                  />
-                </div>
-
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">פקס</label>
-                  <input 
-                    type="text" 
-                    required
-                    className="form-control"
-                    value={formData.contact_fax}
-                    onChange={e => updateFormData({ contact_fax: e.target.value })}
-                    placeholder="09-8344841"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">טקסט כותרת תחתונה (Footer Text)</label>
-              <input 
-                type="text" 
-                required 
-                className="form-control"
-                value={formData.footer_text}
-                onChange={e => updateFormData({ footer_text: e.target.value })}
-                placeholder="כל הזכויות שמורות לקיטו מרום © 2026"
+                value={formData.logo_url}
+                onChange={e => updateFormData({ logo_url: e.target.value })}
+                placeholder="https://www.kitomarom.co.il/assets/images/logo.png"
               />
             </div>
 

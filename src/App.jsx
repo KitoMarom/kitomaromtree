@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import { AuthContext } from './authContext';
 
@@ -20,6 +20,7 @@ function App() {
   const [role, setRole] = useState(null);
   const [isActive, setIsActive] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const currentProfileUserIdRef = useRef(null);
 
   // Custom Router navigation function
   const navigate = (to) => {
@@ -42,6 +43,7 @@ function App() {
     if (!currentUser) {
       setRole(null);
       setIsActive(false);
+      currentProfileUserIdRef.current = null;
       setAuthLoading(false);
       return;
     }
@@ -59,16 +61,23 @@ function App() {
 
       if (error) {
         console.error('Error fetching user profile:', error);
-        // If profile fetch fails but user exists, could be due to brand new registration
-        // (the trigger should complete, but let's retry or fallback)
-        setRole(null);
-        setIsActive(false);
+        if (showLoading) {
+          setRole(null);
+          setIsActive(false);
+          currentProfileUserIdRef.current = null;
+        }
       } else if (data) {
         setRole(data.role);
         setIsActive(data.is_active);
+        currentProfileUserIdRef.current = currentUser.id;
       }
     } catch (err) {
       console.error('Failed to query user profile:', err);
+      if (showLoading) {
+        setRole(null);
+        setIsActive(false);
+        currentProfileUserIdRef.current = null;
+      }
     } finally {
       if (showLoading) {
         setAuthLoading(false);
@@ -78,10 +87,10 @@ function App() {
 
   useEffect(() => {
     // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user || null;
       setUser(currentUser);
-      fetchProfile(currentUser, { showLoading: true });
+      await fetchProfile(currentUser, { showLoading: true });
     });
 
     // 2. Auth State Listener
@@ -89,12 +98,22 @@ function App() {
       const currentUser = session?.user || null;
       setUser(currentUser);
 
+      if (event === 'SIGNED_OUT' || !currentUser) {
+        currentProfileUserIdRef.current = null;
+        setRole(null);
+        setIsActive(false);
+        setAuthLoading(false);
+        return;
+      }
+
       if (event === 'TOKEN_REFRESHED') {
         fetchProfile(currentUser, { showLoading: false });
         return;
       }
 
-      fetchProfile(currentUser, { showLoading: event === 'SIGNED_IN' || event === 'INITIAL_SESSION' });
+      const shouldBlockForProfile = currentProfileUserIdRef.current !== currentUser.id;
+
+      fetchProfile(currentUser, { showLoading: shouldBlockForProfile });
     });
 
     return () => subscription.unsubscribe();

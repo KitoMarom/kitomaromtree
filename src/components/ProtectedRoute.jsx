@@ -3,6 +3,7 @@ import { AuthContext } from '../authContext';
 
 export default function ProtectedRoute({ children, requiredRole, onNavigate }) {
   const { user, role, isActive, loading } = useContext(AuthContext);
+  const hasAccess = Boolean(user && isActive && (!requiredRole || role === requiredRole));
 
   useEffect(() => {
     if (!loading) {
@@ -18,7 +19,7 @@ export default function ProtectedRoute({ children, requiredRole, onNavigate }) {
     }
   }, [user, role, isActive, loading, requiredRole, onNavigate]);
 
-  if (loading) {
+  if (loading && !hasAccess) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <span>בודק הרשאות גישה...</span>
@@ -27,7 +28,7 @@ export default function ProtectedRoute({ children, requiredRole, onNavigate }) {
   }
 
   // Only render children if verified
-  if (user && isActive && (!requiredRole || role === requiredRole)) {
+  if (hasAccess) {
     return <>{children}</>;
   }
 
