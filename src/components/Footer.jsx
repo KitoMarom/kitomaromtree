@@ -2,8 +2,6 @@ import React from 'react';
 
 export default function Footer({ settings }) {
   const footerText = settings?.footer_text || 'כל הזכויות שמורות לקיטו מרום © 2026';
-  const email = settings?.contact_email || 'office@kitomarom.co.il';
-  const phone = settings?.contact_phone || '09-7407000';
 
   return (
     <footer style={{
@@ -37,7 +35,6 @@ export default function Footer({ settings }) {
               <li>מען למכתבים: ת.ד. 2356, נתניה 42120</li>
               <li>טלפון: <a href="tel:09-8344840" style={{ color: 'var(--primary-light)' }}>09-8344840</a></li>
               <li>פקס: 09-8344841</li>
-              <li>אימייל: <a href={`mailto:${email}`} style={{ color: 'var(--primary-light)' }}>{email}</a></li>
             </ul>
           </div>
 
