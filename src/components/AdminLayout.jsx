@@ -125,7 +125,10 @@ export default function AdminLayout({ children, currentPath, onNavigate }) {
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)', fontFamily: 'var(--font-family)' }}>
+    <div
+      className="admin-layout-shell"
+      style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-main)', fontFamily: 'var(--font-family)' }}
+    >
       <button
         className="hamburger-btn"
         onClick={() => setMobileMenuOpen(true)}
@@ -157,7 +160,7 @@ export default function AdminLayout({ children, currentPath, onNavigate }) {
       </aside>
 
       <div className={`mobile-drawer ${isMobileMenuOpen ? 'open' : ''}`}>
-        <aside className="admin-sidebar" style={{
+        <aside className="admin-sidebar admin-mobile-sidebar" style={{
           width: '100%',
           borderLeft: 'none',
           padding: '30px 20px',
@@ -186,7 +189,7 @@ export default function AdminLayout({ children, currentPath, onNavigate }) {
         </aside>
       </div>
 
-      <main style={{
+      <main className="admin-main" style={{
         flexGrow: 1,
         padding: '40px 30px',
         overflowY: 'auto',

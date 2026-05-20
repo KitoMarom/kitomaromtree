@@ -2,6 +2,7 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle,
+  Copy,
   Edit3,
   Link as LinkIcon,
   MapPin,
@@ -44,6 +45,14 @@ function getAudienceLabel(value) {
 function truncateUrl(url) {
   if (!url) return '';
   return url.length > 42 ? `${url.slice(0, 42)}...` : url;
+}
+
+function getOperationErrorMessage(err, fallback) {
+  if (err?.message?.includes('registration_cards_education_level_check')) {
+    return 'הדאטהבייס עדיין לא עודכן לתמיכה בבחירה "בתי ספר וגני ילדים". צריך להריץ את מיגרציית ה-constraint ב-Supabase.';
+  }
+
+  return err?.message || fallback;
 }
 
 function groupByActivity(cards) {
@@ -98,10 +107,11 @@ export default function Cards({ onNavigate }) {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingCardId, setEditingCardId] = useState(null);
+  const [lockedActivityTitle, setLockedActivityTitle] = useState('');
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const activityGroups = useMemo(() => groupByActivity(cards), [cards]);
-  const isAddingAreaToExistingActivity = !editingCardId && Boolean(formData.display_title.trim());
+  const isAddingAreaToExistingActivity = !editingCardId && Boolean(lockedActivityTitle);
 
   async function loadCards() {
     try {
@@ -152,11 +162,13 @@ export default function Cards({ onNavigate }) {
   function resetForm() {
     setFormData(EMPTY_FORM);
     setEditingCardId(null);
+    setLockedActivityTitle('');
     setShowForm(false);
   }
 
   function handleEditClick(card) {
     setEditingCardId(card.id);
+    setLockedActivityTitle('');
     setFormData({
       area_name: card.area_name || '',
       display_title: card.display_title || '',
@@ -165,6 +177,25 @@ export default function Cards({ onNavigate }) {
       sort_order: card.sort_order || 0,
       is_active: card.is_active !== undefined ? card.is_active : true,
       education_level: card.education_level || 'school'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleCreateActivityClick() {
+    setEditingCardId(null);
+    setLockedActivityTitle('');
+    setFormData(EMPTY_FORM);
+    setShowForm(true);
+  }
+
+  function handleAddAreaToActivityClick(activity) {
+    setEditingCardId(null);
+    setLockedActivityTitle(activity.title);
+    setFormData({
+      ...EMPTY_FORM,
+      display_title: activity.title,
+      sort_order: activity.sortOrder
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -243,7 +274,7 @@ export default function Cards({ onNavigate }) {
       await loadCards();
     } catch (err) {
       console.error('Operation failed:', err);
-      setError(err.message || 'אירעה שגיאה בשמירת הפעילות.');
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשמירת הפעילות.'));
     } finally {
       setOpLoading(false);
     }
@@ -275,7 +306,94 @@ export default function Cards({ onNavigate }) {
       await loadCards();
     } catch (err) {
       console.error('Toggle failed:', err);
-      setError('שגיאה בשינוי מצב האזור.');
+      setError(getOperationErrorMessage(err, 'שגיאה בשינוי מצב האזור.'));
+    }
+  }
+
+  async function handleDuplicateArea(card) {
+    const areaName = window.prompt('שם האזור המשוכפל:', `${card.area_name} - עותק`);
+    const normalizedAreaName = areaName?.trim();
+
+    if (!normalizedAreaName) return;
+
+    setError(null);
+    setMessage(null);
+    setOpLoading(true);
+
+    try {
+      const { data: newCard, error: insertError } = await supabase
+        .from('registration_cards')
+        .insert({
+          area_name: normalizedAreaName,
+          display_title: card.display_title,
+          description: card.description || '',
+          target_url: card.target_url,
+          sort_order: Number(card.sort_order) + 1 || 0,
+          is_active: false,
+          education_level: card.education_level || 'school'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      await writeAuditLog(
+        'DUPLICATE_ACTIVITY_AREA',
+        newCard.id,
+        `Duplicated ${card.area_name} as ${normalizedAreaName} in activity ${card.display_title}`
+      );
+
+      setMessage(`האזור "${card.area_name}" שוכפל כ-"${normalizedAreaName}" ונשמר ככבוי לעריכה.`);
+      await loadCards();
+    } catch (err) {
+      console.error('Duplicate area failed:', err);
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול האזור.'));
+    } finally {
+      setOpLoading(false);
+    }
+  }
+
+  async function handleDuplicateActivity(activity) {
+    const activityTitle = window.prompt('שם הפעילות המשוכפלת:', `${activity.title} - עותק`);
+    const normalizedActivityTitle = activityTitle?.trim();
+
+    if (!normalizedActivityTitle) return;
+
+    setError(null);
+    setMessage(null);
+    setOpLoading(true);
+
+    try {
+      const duplicatedAreas = activity.areas.map((area) => ({
+        area_name: area.area_name,
+        display_title: normalizedActivityTitle,
+        description: area.description || '',
+        target_url: area.target_url,
+        sort_order: area.sort_order || 0,
+        is_active: false,
+        education_level: area.education_level || 'school'
+      }));
+
+      const { data: newAreas, error: insertError } = await supabase
+        .from('registration_cards')
+        .insert(duplicatedAreas)
+        .select();
+
+      if (insertError) throw insertError;
+
+      await writeAuditLog(
+        'DUPLICATE_ACTIVITY',
+        newAreas?.[0]?.id || activity.areas[0].id,
+        `Duplicated activity ${activity.title} as ${normalizedActivityTitle} with ${activity.areas.length} areas`
+      );
+
+      setMessage(`הפעילות "${activity.title}" שוכפלה כ-"${normalizedActivityTitle}" וכל האזורים נשמרו ככבויים לעריכה.`);
+      await loadCards();
+    } catch (err) {
+      console.error('Duplicate activity failed:', err);
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול הפעילות.'));
+    } finally {
+      setOpLoading(false);
     }
   }
 
@@ -312,7 +430,7 @@ export default function Cards({ onNavigate }) {
       await loadCards();
     } catch (err) {
       console.error('Delete area failed:', err);
-      setError(err.message || 'אירעה שגיאה במחיקת האזור.');
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת האזור.'));
     } finally {
       setOpLoading(false);
     }
@@ -353,7 +471,7 @@ export default function Cards({ onNavigate }) {
       await loadCards();
     } catch (err) {
       console.error('Delete activity failed:', err);
-      setError(err.message || 'אירעה שגיאה במחיקת הפעילות.');
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת הפעילות.'));
     } finally {
       setOpLoading(false);
     }
@@ -374,7 +492,7 @@ export default function Cards({ onNavigate }) {
 
           {!showForm && (
             <button
-              onClick={() => setShowForm(true)}
+              onClick={handleCreateActivityClick}
               className="btn btn-primary"
               style={{ fontWeight: '700' }}
             >
@@ -440,9 +558,19 @@ export default function Cards({ onNavigate }) {
                   required
                   className="form-control"
                   placeholder={'לדוגמה: הרשמה לקייטנת קיץ תשפ"ו'}
+                  disabled={isAddingAreaToExistingActivity}
                   value={formData.display_title}
                   onChange={(event) => setFormData({ ...formData, display_title: event.target.value })}
+                  style={{
+                    cursor: isAddingAreaToExistingActivity ? 'not-allowed' : 'text',
+                    opacity: isAddingAreaToExistingActivity ? 0.78 : 1
+                  }}
                 />
+                {isAddingAreaToExistingActivity && (
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                    שם הפעילות נעול כשמוסיפים אזור לפעילות קיימת.
+                  </span>
+                )}
               </div>
 
               <div className="form-group">
@@ -569,16 +697,7 @@ export default function Cards({ onNavigate }) {
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setFormData({
-                          ...EMPTY_FORM,
-                          display_title: activity.title,
-                          sort_order: activity.sortOrder
-                        });
-                        setEditingCardId(null);
-                        setShowForm(true);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
+                      onClick={() => handleAddAreaToActivityClick(activity)}
                     >
                       <Plus size={15} />
                       הוספת אזור לפעילות
@@ -586,13 +705,24 @@ export default function Cards({ onNavigate }) {
 
                     <button
                       type="button"
-                      className="btn btn-danger btn-sm"
+                      className="admin-icon-button"
+                      title="שכפול פעילות"
+                      aria-label={`שכפול פעילות ${activity.title}`}
+                      disabled={opLoading}
+                      onClick={() => handleDuplicateActivity(activity)}
+                    >
+                      <Copy size={16} />
+                    </button>
+
+                    <button
+                      type="button"
+                      className="admin-icon-button admin-icon-button-danger"
+                      title="מחיקת פעילות"
+                      aria-label={`מחיקת פעילות ${activity.title}`}
                       disabled={opLoading}
                       onClick={() => handleDeleteActivity(activity)}
-                      style={{ padding: '8px 14px', fontSize: '13px', fontWeight: '700' }}
                     >
-                      <Trash2 size={15} />
-                      מחיקת פעילות
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -681,13 +811,23 @@ export default function Cards({ onNavigate }) {
                               </button>
 
                               <button
-                                onClick={() => handleDeleteArea(card)}
-                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDuplicateArea(card)}
+                                className="admin-icon-button"
+                                title="שכפול אזור"
+                                aria-label={`שכפול אזור ${card.area_name}`}
                                 disabled={opLoading}
-                                style={{ padding: '7px 12px', fontSize: '13px' }}
                               >
-                                <Trash2 size={14} />
-                                מחיקה
+                                <Copy size={15} />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteArea(card)}
+                                className="admin-icon-button admin-icon-button-danger"
+                                title="מחיקת אזור"
+                                aria-label={`מחיקת אזור ${card.area_name}`}
+                                disabled={opLoading}
+                              >
+                                <Trash2 size={15} />
                               </button>
                             </div>
                           </td>
@@ -702,6 +842,40 @@ export default function Cards({ onNavigate }) {
             <style>{`
               .table-row-hover:hover {
                 background-color: #f8fafc;
+              }
+
+              .admin-icon-button {
+                width: 34px;
+                height: 34px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                background: #ffffff;
+                color: var(--primary-purple);
+                cursor: pointer;
+                transition: var(--transition);
+              }
+
+              .admin-icon-button:hover {
+                background: var(--primary-light);
+              }
+
+              .admin-icon-button-danger {
+                color: #9f3a38;
+                border-color: #ead2d2;
+                background: #fff8f8;
+              }
+
+              .admin-icon-button-danger:hover {
+                background: #fdf0f0;
+                border-color: #e7bebe;
+              }
+
+              .admin-icon-button:disabled {
+                cursor: not-allowed;
+                opacity: 0.5;
               }
             `}</style>
           </div>
