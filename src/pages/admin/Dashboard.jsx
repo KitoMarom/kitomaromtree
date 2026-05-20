@@ -200,7 +200,6 @@ export default function Dashboard({ onNavigate }) {
           <ul style={{ paddingRight: '20px', fontSize: '14px', color: '#78350f', display: 'flex', flexDirection: 'column', gap: '6px', listStyleType: 'disc' }}>
             <li>שינויים שתבצעו בקישורים או בהגדרות העמוד יתעדכנו <strong>מיד</strong> בעמוד הציבורי של ההורים.</li>
             <li>מומלץ לסמן קישורי הרשמה שפג תוקפם כ-<strong>לא פעיל</strong> במקום למחוק אותם, למקרה שתצטרכו להפעילם שוב בשנה הבאה.</li>
-            <li>אם ברצונכם להוסיף תמונות לכרטיסי האזורים, תוכלו להזין קישור תמונה ישיר (למשל ממאגר תמונות או משרת אחסון) בטופס עריכת הכרטיס.</li>
           </ul>
         </div>
       </div>
