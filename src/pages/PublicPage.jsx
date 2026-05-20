@@ -196,11 +196,20 @@ export default function PublicPage({ registrationId, onNavigate }) {
               <article className="card" style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '18px',
+                gap: '20px',
                 padding: '28px',
                 backgroundColor: '#ffffff'
               }}>
                 <div>
+                  <span style={{
+                    display: 'block',
+                    fontSize: '15px',
+                    fontWeight: '800',
+                    color: 'var(--secondary-color)',
+                    marginBottom: '8px'
+                  }}>
+                    מיועד עבור
+                  </span>
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -237,14 +246,24 @@ export default function PublicPage({ registrationId, onNavigate }) {
                 </div>
 
                 {selectedRegistration.description && (
-                  <p style={{
-                    fontSize: '18px',
-                    lineHeight: '1.75',
-                    color: 'var(--text-dark)',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {selectedRegistration.description}
-                  </p>
+                  <div>
+                    <h3 style={{
+                      fontSize: '19px',
+                      fontWeight: '800',
+                      color: 'var(--primary-dark)',
+                      marginBottom: '8px'
+                    }}>
+                      פירוט
+                    </h3>
+                    <p style={{
+                      fontSize: '18px',
+                      lineHeight: '1.75',
+                      color: 'var(--text-dark)',
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {selectedRegistration.description}
+                    </p>
+                  </div>
                 )}
 
                 <a
@@ -289,9 +308,10 @@ export default function PublicPage({ registrationId, onNavigate }) {
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '16px',
+                      gap: '18px',
                       padding: '24px',
-                      backgroundColor: '#ffffff'
+                      backgroundColor: '#ffffff',
+                      borderColor: '#d7d2de'
                     }}
                   >
                     <h2 style={{
@@ -303,34 +323,49 @@ export default function PublicPage({ registrationId, onNavigate }) {
                       {activity.title}
                     </h2>
 
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '10px'
-                    }}>
-                      {activity.areas.map((area) => (
-                        <a
-                          key={area.id}
-                          href={`/registration/${area.id}`}
-                          onClick={(event) => navigate(event, `/registration/${area.id}`)}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '48px',
-                            padding: '10px 18px',
-                            borderRadius: '999px',
-                            border: '1px solid var(--primary-purple)',
-                            backgroundColor: 'var(--primary-light)',
-                            color: 'var(--primary-dark)',
-                            fontSize: '18px',
-                            fontWeight: '800',
-                            lineHeight: '1.2'
-                          }}
-                        >
-                          {area.area_name}
-                        </a>
-                      ))}
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                      <span style={{
+                        display: 'block',
+                        fontSize: '17px',
+                        fontWeight: '800',
+                        color: 'var(--primary-dark)',
+                        marginBottom: '10px'
+                      }}>
+                        אזורים
+                      </span>
+
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md)',
+                        overflow: 'hidden',
+                        backgroundColor: '#ffffff'
+                      }}>
+                        {activity.areas.map((area, index) => (
+                          <a
+                            key={area.id}
+                            href={`/registration/${area.id}`}
+                            aria-label={`מעבר לפרטי ${activity.title} באזור ${area.area_name}`}
+                            onClick={(event) => navigate(event, `/registration/${area.id}`)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-start',
+                              minHeight: '54px',
+                              padding: '12px 16px',
+                              borderTop: index === 0 ? 'none' : '1px solid var(--border-color)',
+                              backgroundColor: '#ffffff',
+                              color: 'var(--primary-dark)',
+                              fontSize: '19px',
+                              fontWeight: '800',
+                              lineHeight: '1.2'
+                            }}
+                          >
+                            <span>{area.area_name}</span>
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   </article>
                 ))
