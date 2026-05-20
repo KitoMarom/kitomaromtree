@@ -409,7 +409,7 @@ export default function Cards({ onNavigate }) {
           </div>
         ) : (
           <div className="card" style={{ padding: 0, overflow: 'hidden', backgroundColor: '#ffffff' }}>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-responsive">
               <table style={{
                 width: '100%',
                 borderCollapse: 'collapse',

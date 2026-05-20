@@ -311,7 +311,7 @@ export default function Users({ onNavigate }) {
           <div>טוען רשימת צוות...</div>
         ) : (
           <div className="card" style={{ padding: 0, overflow: 'hidden', backgroundColor: '#ffffff' }}>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-responsive">
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
                 <thead>
                   <tr style={{ backgroundColor: 'var(--primary-light)', borderBottom: '2px solid var(--border-color)' }}>
