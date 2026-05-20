@@ -152,7 +152,15 @@ export default function Users({ onNavigate }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>👥 ניהול צוות משתמשים והרשאות</h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              ניהול צוות משתמשים והרשאות
+            </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
               מנהלי מערכת יכולים להוסיף אנשי צוות, לעדכן הרשאות (עורך/מנהל) או לחסום גישה של משתמשים קיימים.
             </p>
@@ -162,30 +170,68 @@ export default function Users({ onNavigate }) {
             <button 
               onClick={() => setShowInviteForm(true)} 
               className="btn btn-primary"
-              style={{ fontWeight: '700' }}
+              style={{ fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              ➕ הוספת איש צוות חדש
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              הוספת איש צוות חדש
             </button>
           )}
         </div>
 
         {/* Messaging */}
         {message && (
-          <div style={{ padding: '14px', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: 'var(--radius-sm)', fontWeight: '600' }}>
-            {message}
+          <div style={{ 
+            padding: '14px 18px', 
+            backgroundColor: '#d1fae5', 
+            color: '#065f46', 
+            borderRadius: 'var(--radius-md)', 
+            fontWeight: '600',
+            border: '1px solid #a7f3d0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span>{message}</span>
           </div>
         )}
         {error && (
-          <div style={{ padding: '14px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: 'var(--radius-sm)', fontWeight: '600' }}>
-            ❌ {error}
+          <div style={{ 
+            padding: '14px 18px', 
+            backgroundColor: '#fee2e2', 
+            color: '#991b1b', 
+            borderRadius: 'var(--radius-md)', 
+            fontWeight: '600',
+            border: '1px solid #fecaca',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
 
         {/* Creation/Invitation Form Box */}
         {showInviteForm && (
           <div className="card glass" style={{ borderRight: '6px solid var(--primary-purple)', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#ffffff' }}>
-            <h3 style={{ fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)' }}>
-              ➕ הוספת משתמש צוות חדש
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '19px', fontWeight: '800', color: 'var(--primary-purple)' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="17" y1="11" x2="23" y2="11" />
+              </svg>
+              הוספת משתמש צוות חדש
             </h3>
 
             <form onSubmit={handleInvite} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -242,8 +288,18 @@ export default function Users({ onNavigate }) {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setShowInviteForm(false)} className="btn btn-text">ביטול</button>
-                <button type="submit" disabled={opLoading} className="btn btn-primary">
-                  {opLoading ? 'מוסיף משתמש...' : '👤 הוסף איש צוות'}
+                <button type="submit" disabled={opLoading} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {opLoading ? 'מוסיף משתמש...' : (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="8" cy="7" r="4" />
+                        <line x1="20" y1="8" x2="20" y2="14" />
+                        <line x1="17" y1="11" x2="23" y2="11" />
+                      </svg>
+                      הוסף איש צוות
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -291,8 +347,8 @@ export default function Users({ onNavigate }) {
                               onChange={(e) => handleChangeRole(profile, e.target.value)}
                               disabled={opLoading}
                             >
-                              <option value="editor">✍️ עורך</option>
-                              <option value="admin">🔑 מנהל</option>
+                              <option value="editor">עורך תוכן</option>
+                              <option value="admin">מנהל מערכת</option>
                             </select>
                           )}
                         </td>
@@ -310,10 +366,25 @@ export default function Users({ onNavigate }) {
                             <button
                               onClick={() => handleToggleActive(profile)}
                               className={`btn btn-sm ${profile.is_active ? 'btn-outline' : 'btn-primary'}`}
-                              style={{ padding: '6px 12px', fontSize: '13px' }}
+                              style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}
                               disabled={opLoading}
                             >
-                              {profile.is_active ? '⏸️ השעיית גישה' : '▶️ ביטול השעיה'}
+                              {profile.is_active ? (
+                                <>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="6" y="4" width="4" height="16" />
+                                    <rect x="14" y="4" width="4" height="16" />
+                                  </svg>
+                                  השעיית גישה
+                                </>
+                              ) : (
+                                <>
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                  ביטול השעיה
+                                </>
+                              )}
                             </button>
                           ) : (
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>לא ניתן לשנות משתמש עצמי</span>
