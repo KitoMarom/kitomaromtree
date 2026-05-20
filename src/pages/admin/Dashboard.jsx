@@ -87,7 +87,7 @@ export default function Dashboard({ onNavigate }) {
                 {stats.activeCards} <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--text-muted)' }}>מתוך {stats.totalCards} סה"כ</span>
               </h2>
               <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                אזורים וקישורים המוצגים להורים כעת בעמוד ההרשמה.
+                לינקים שמוצגים להורים כעת בעמוד ההרשמה.
               </span>
             </div>
           </div>
@@ -146,8 +146,8 @@ export default function Dashboard({ onNavigate }) {
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                 </svg>
               </div>
-              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול פרויקטים ואזורים</h4>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספה, עריכה, סידור והפעלה/כיבוי של פרויקטים וקישורי הרשמה לפי אזורים.</p>
+              <h4 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>ניהול פרויקטים ולינקים</h4>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>הוספה, עריכה, סידור והפעלה/כיבוי של פרויקטים ולינקי הרשמה.</p>
             </div>
 
             {role === 'admin' && (

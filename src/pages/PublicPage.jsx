@@ -365,7 +365,7 @@ export default function PublicPage({ registrationId, onNavigate }) {
                           <a
                             key={area.id}
                             href={`/registration/${area.id}`}
-                            aria-label={`מעבר לפרטי ${activity.title} באזור ${area.area_name}`}
+                            aria-label={`מעבר לפרטי ${activity.title}: ${area.area_name}`}
                             onClick={(event) => navigate(event, `/registration/${area.id}`)}
                             style={{
                               display: 'flex',

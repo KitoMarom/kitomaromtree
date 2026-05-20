@@ -14,7 +14,7 @@ import { AuthContext } from '../authContext';
 const menuItems = [
   { path: '/admin', label: 'לוח בקרה', icon: LayoutDashboard, roles: ['admin', 'editor'] },
   { path: '/admin/settings', label: 'הגדרות עמוד', icon: Settings, roles: ['admin', 'editor'] },
-  { path: '/admin/cards', label: 'פרויקטים ואזורים', icon: Link2, roles: ['admin', 'editor'] },
+  { path: '/admin/cards', label: 'פרויקטים ולינקים', icon: Link2, roles: ['admin', 'editor'] },
   { path: '/admin/users', label: 'ניהול צוות', icon: Users, roles: ['admin'] }
 ];
 

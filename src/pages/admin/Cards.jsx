@@ -96,9 +96,8 @@ function groupByActivity(cards) {
   });
 
   return Array.from(groups.values())
-    .map((group) => ({
-      ...group,
-      areas: group.areas.sort((first, second) => {
+    .map((group) => {
+      const areas = group.areas.sort((first, second) => {
         const firstOrder = Number(first.sort_order) || 0;
         const secondOrder = Number(second.sort_order) || 0;
 
@@ -107,8 +106,14 @@ function groupByActivity(cards) {
         }
 
         return (first.area_name || '').localeCompare(second.area_name || '', 'he');
-      })
-    }))
+      });
+
+      return {
+        ...group,
+        areas,
+        activeCount: areas.filter((area) => area.is_active).length
+      };
+    })
     .sort((first, second) => {
       if (first.sortOrder !== second.sortOrder) {
         return first.sortOrder - second.sortOrder;
@@ -192,7 +197,7 @@ export default function Cards({ onNavigate }) {
       setCards(data || []);
     } catch (err) {
       console.error('Failed to load registrations:', err);
-      setError('אירעה שגיאה בטעינת הפרויקטים והאזורים.');
+      setError('אירעה שגיאה בטעינת הפרויקטים והלינקים.');
     } finally {
       setLoading(false);
     }
@@ -213,7 +218,7 @@ export default function Cards({ onNavigate }) {
         if (isMounted) setCards(data || []);
       } catch (err) {
         console.error('Failed to load registrations:', err);
-        if (isMounted) setError('אירעה שגיאה בטעינת הפרויקטים והאזורים.');
+        if (isMounted) setError('אירעה שגיאה בטעינת הפרויקטים והלינקים.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -329,7 +334,7 @@ export default function Cards({ onNavigate }) {
     }
 
     if (projectFormData.areaIds.length === 0) {
-      setError('לא נמצאו אזורים לעדכון בפרויקט הזה.');
+      setError('לא נמצאו לינקים לעדכון בפרויקט הזה.');
       return;
     }
 
@@ -407,7 +412,7 @@ export default function Cards({ onNavigate }) {
           `Updated ${payload.area_name} for activity ${payload.display_title}`
         );
 
-        setMessage('האזור עודכן בהצלחה.');
+        setMessage('הלינק עודכן בהצלחה.');
       } else {
         const { data: newCard, error: insertError } = await supabase
           .from('registration_cards')
@@ -423,7 +428,7 @@ export default function Cards({ onNavigate }) {
           `Created ${payload.area_name} for activity ${payload.display_title}`
         );
 
-        setMessage('האזור נוסף לפרויקט בהצלחה.');
+        setMessage('הלינק נוסף לפרויקט בהצלחה.');
       }
 
       resetForm();
@@ -458,16 +463,51 @@ export default function Cards({ onNavigate }) {
         `${nextActiveState ? 'Activated' : 'Deactivated'} ${card.area_name} for activity ${card.display_title}`
       );
 
-      setMessage(`האזור "${card.area_name}" ${nextActiveState ? 'הופעל ויוצג להורים' : 'כובה והוסר מהעמוד הציבורי'}.`);
+      setMessage(`הלינק "${card.area_name}" ${nextActiveState ? 'הופעל ויוצג להורים' : 'כובה והוסר מהעמוד הציבורי'}.`);
       await loadCards();
     } catch (err) {
       console.error('Toggle failed:', err);
-      setError(getOperationErrorMessage(err, 'שגיאה בשינוי מצב האזור.'));
+      setError(getOperationErrorMessage(err, 'שגיאה בשינוי מצב הלינק.'));
+    }
+  }
+
+  async function handleToggleActivityActive(activity) {
+    setError(null);
+    setMessage(null);
+    setOpLoading(true);
+
+    const linkIds = activity.areas.map((area) => area.id);
+    const nextActiveState = activity.activeCount === 0;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('registration_cards')
+        .update({
+          is_active: nextActiveState,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', linkIds);
+
+      if (updateError) throw updateError;
+
+      await writeAuditLog(
+        nextActiveState ? 'ACTIVATE_PROJECT' : 'DEACTIVATE_PROJECT',
+        linkIds[0],
+        `${nextActiveState ? 'Activated' : 'Deactivated'} project ${activity.title} with ${activity.areas.length} links`
+      );
+
+      setMessage(`הפרויקט "${activity.title}" ${nextActiveState ? 'הופעל וכל הלינקים יוצגו להורים' : 'כובה וכל הלינקים הוסרו מהעמוד הציבורי'}.`);
+      await loadCards();
+    } catch (err) {
+      console.error('Project toggle failed:', err);
+      setError(getOperationErrorMessage(err, 'שגיאה בשינוי מצב הפרויקט.'));
+    } finally {
+      setOpLoading(false);
     }
   }
 
   async function handleDuplicateArea(card) {
-    const areaName = window.prompt('שם האזור המשוכפל:', `${card.area_name} - עותק`);
+    const areaName = window.prompt('שם הלינק המשוכפל:', `${card.area_name} - עותק`);
     const normalizedAreaName = areaName?.trim();
 
     if (!normalizedAreaName) return;
@@ -500,11 +540,11 @@ export default function Cards({ onNavigate }) {
         `Duplicated ${card.area_name} as ${normalizedAreaName} in activity ${card.display_title}`
       );
 
-      setMessage(`האזור "${card.area_name}" שוכפל כ-"${normalizedAreaName}" ונשמר ככבוי לעריכה.`);
+      setMessage(`הלינק "${card.area_name}" שוכפל כ-"${normalizedAreaName}" ונשמר ככבוי לעריכה.`);
       await loadCards();
     } catch (err) {
       console.error('Duplicate area failed:', err);
-      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול האזור.'));
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה בשכפול הלינק.'));
     } finally {
       setOpLoading(false);
     }
@@ -545,7 +585,7 @@ export default function Cards({ onNavigate }) {
         `Duplicated activity ${activity.title} as ${normalizedActivityTitle} with ${activity.areas.length} areas`
       );
 
-      setMessage(`הפרויקט "${activity.title}" שוכפל כ-"${normalizedActivityTitle}" וכל האזורים נשמרו ככבויים לעריכה.`);
+      setMessage(`הפרויקט "${activity.title}" שוכפל כ-"${normalizedActivityTitle}" וכל הלינקים נשמרו ככבויים לעריכה.`);
       await loadCards();
     } catch (err) {
       console.error('Duplicate activity failed:', err);
@@ -557,7 +597,7 @@ export default function Cards({ onNavigate }) {
 
   async function handleDeleteArea(card) {
     const approved = window.confirm(
-      `למחוק את האזור "${card.area_name}" מתוך הפרויקט "${card.display_title}"? הפעולה לא ניתנת לביטול.`
+      `למחוק את הלינק "${card.area_name}" מתוך הפרויקט "${card.display_title}"? הפעולה לא ניתנת לביטול.`
     );
 
     if (!approved) return;
@@ -584,11 +624,11 @@ export default function Cards({ onNavigate }) {
         resetForm();
       }
 
-      setMessage(`האזור "${card.area_name}" נמחק מהפרויקט.`);
+      setMessage(`הלינק "${card.area_name}" נמחק מהפרויקט.`);
       await loadCards();
     } catch (err) {
       console.error('Delete area failed:', err);
-      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת האזור.'));
+      setError(getOperationErrorMessage(err, 'אירעה שגיאה במחיקת הלינק.'));
     } finally {
       setOpLoading(false);
     }
@@ -596,7 +636,7 @@ export default function Cards({ onNavigate }) {
 
   async function handleDeleteActivity(activity) {
     const approved = window.confirm(
-      `למחוק את הפרויקט "${activity.title}" ואת כל ${activity.areas.length} האזורים שבתוכו? הפעולה לא ניתנת לביטול.`
+      `למחוק את הפרויקט "${activity.title}" ואת כל ${activity.areas.length} הלינקים שבתוכו? הפעולה לא ניתנת לביטול.`
     );
 
     if (!approved) return;
@@ -625,7 +665,7 @@ export default function Cards({ onNavigate }) {
         resetForm();
       }
 
-      setMessage(`הפרויקט "${activity.title}" נמחק יחד עם כל האזורים שלו.`);
+      setMessage(`הפרויקט "${activity.title}" נמחק יחד עם כל הלינקים שלו.`);
       await loadCards();
     } catch (err) {
       console.error('Delete activity failed:', err);
@@ -641,10 +681,10 @@ export default function Cards({ onNavigate }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '28px', fontWeight: '800', color: 'var(--primary-dark)' }}>
-              ניהול פרויקטים ואזורים
+              ניהול פרויקטים ולינקים
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '6px' }}>
-              כל פרויקט יכול להכיל כמה אזורים. לכל אזור מגדירים קישור הרשמה, קהל יעד ותיאור מלא.
+              כל פרויקט יכול להכיל כמה לינקים. לכל לינק מגדירים קישור הרשמה, קהל יעד ותיאור מלא.
             </p>
           </div>
 
@@ -716,7 +756,7 @@ export default function Cards({ onNavigate }) {
                 onChange={(event) => setProjectFormData({ ...projectFormData, title: event.target.value })}
               />
               <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                שינוי שם הפרויקט יעדכן יחד את כל {projectFormData.areaIds.length} האזורים שבתוכו.
+                שינוי שם הפרויקט יעדכן יחד את כל {projectFormData.areaIds.length} הלינקים שבתוכו.
               </span>
             </div>
 
@@ -751,13 +791,22 @@ export default function Cards({ onNavigate }) {
           >
             <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--primary-dark)' }}>
               {editingCardId
-                ? 'עריכת אזור בפרויקט'
+                ? 'עריכת לינק בפרויקט'
                 : isAddingAreaToExistingActivity
-                  ? 'הוספת אזור לפרויקט קיים'
+                  ? 'הוספת לינק לפרויקט קיים'
                   : 'הוספת פרויקט חדש'}
             </h2>
 
-            <div className="form-row">
+            {isCreatingNewActivity && (
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+                פרטי הפרויקט
+              </h3>
+            )}
+
+            <div
+              className="form-row"
+              style={isCreatingNewActivity ? { gridTemplateColumns: '1fr' } : undefined}
+            >
               <div className="form-group">
                 <label className="form-label">שם הפרויקט</label>
                 <input
@@ -775,36 +824,58 @@ export default function Cards({ onNavigate }) {
                 />
                 {isAddingAreaToExistingActivity && (
                   <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    שם הפרויקט נעול כשמוסיפים אזור לפרויקט קיים.
+                    שם הפרויקט נעול כשמוסיפים לינק לפרויקט קיים.
                   </span>
                 )}
               </div>
 
-              <div className="form-group">
-                <label className="form-label">שם האזור</label>
-                <input
-                  type="text"
-                  required
-                  className="form-control"
-                  placeholder="לדוגמה: חריש"
-                  value={formData.area_name}
-                  onChange={(event) => setFormData({ ...formData, area_name: event.target.value })}
-                />
-              </div>
+              {!isCreatingNewActivity && (
+                <div className="form-group">
+                  <label className="form-label">שם הלינק</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-control"
+                    placeholder="לדוגמה: חריש"
+                    value={formData.area_name}
+                    onChange={(event) => setFormData({ ...formData, area_name: event.target.value })}
+                  />
+                </div>
+              )}
             </div>
 
             {isCreatingNewActivity && (
               <div className="form-group">
-                <label className="form-label">תיאור הפרויקט</label>
+                <label className="form-label">תיאור קצר של הפרויקט</label>
                 <textarea
                   className="form-control"
                   rows="4"
-                  placeholder="תיאור קצר ופשוט שיופיע מתחת לשם הפרויקט בעמוד הציבורי."
+                  placeholder="מופיע מתחת לשם הפרויקט בעמוד הראשי."
                   value={formData.project_description}
                   onChange={(event) => setFormData({ ...formData, project_description: event.target.value })}
                   style={{ resize: 'vertical', minHeight: '110px' }}
                 />
               </div>
+            )}
+
+            {isCreatingNewActivity && (
+              <>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--primary-dark)' }}>
+                  הלינק הראשון בפרויקט
+                </h3>
+
+                <div className="form-group">
+                  <label className="form-label">שם הלינק</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-control"
+                    placeholder="לדוגמה: חריש"
+                    value={formData.area_name}
+                    onChange={(event) => setFormData({ ...formData, area_name: event.target.value })}
+                  />
+                </div>
+              </>
             )}
 
             <div className="form-row">
@@ -834,12 +905,12 @@ export default function Cards({ onNavigate }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">תיאור מלא שיוצג להורים באזור הזה</label>
+              <label className="form-label">תיאור מלא של הלינק</label>
               <textarea
                 required
                 className="form-control"
                 rows="5"
-                placeholder="כתבו כאן את כל הפרטים שההורה צריך לראות לפני מעבר להרשמה."
+                placeholder="מופיע בדף הלינק אחרי שההורה בוחר את הלינק."
                 value={formData.description}
                 onChange={(event) => setFormData({ ...formData, description: event.target.value })}
                 style={{ resize: 'vertical', minHeight: '140px' }}
@@ -864,28 +935,28 @@ export default function Cards({ onNavigate }) {
                 checked={formData.is_active}
                 onChange={(event) => setFormData({ ...formData, is_active: event.target.checked })}
               />
-              אזור פעיל ומוצג להורים
+              לינק פעיל ומוצג להורים
             </label>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' }}>
               <button type="button" onClick={resetForm} className="btn btn-text">ביטול</button>
               <button type="submit" disabled={opLoading} className="btn btn-primary">
                 <Save size={18} />
-                {opLoading ? 'שומר...' : 'שמירת אזור'}
+                {opLoading ? 'שומר...' : 'שמירת לינק'}
               </button>
             </div>
           </form>
         )}
 
         {loading ? (
-          <div>טוען פרויקטים ואזורים...</div>
+          <div>טוען פרויקטים ולינקים...</div>
         ) : cards.length === 0 ? (
           <div className="card text-center" style={{ padding: '50px 20px', backgroundColor: '#ffffff' }}>
             <h2 style={{ fontSize: '20px', color: 'var(--text-muted)', marginBottom: '8px' }}>
               טרם הוגדרו פרויקטים.
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '15px' }}>
-              הוסיפו פרויקט ראשון ואז צרפו אליו את האזורים הרלוונטיים.
+              הוסיפו פרויקט ראשון ואז צרפו אליו את הלינקים הרלוונטיים.
             </p>
           </div>
         ) : (
@@ -922,7 +993,7 @@ export default function Cards({ onNavigate }) {
                       </p>
                     )}
                     <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '4px' }}>
-                      {activity.areas.length} אזורים בפרויקט
+                      {activity.activeCount} לינקים פעילים מתוך {activity.areas.length}
                     </p>
                   </div>
 
@@ -942,7 +1013,17 @@ export default function Cards({ onNavigate }) {
                       onClick={() => handleAddAreaToActivityClick(activity)}
                     >
                       <Plus size={15} />
-                      הוספת אזור לפרויקט
+                      הוספת לינק לפרויקט
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${activity.activeCount > 0 ? 'btn-outline' : 'btn-primary'}`}
+                      disabled={opLoading}
+                      onClick={() => handleToggleActivityActive(activity)}
+                    >
+                      {activity.activeCount > 0 ? <Pause size={15} /> : <Play size={15} />}
+                      {activity.activeCount > 0 ? 'כיבוי פרויקט' : 'הפעלת פרויקט'}
                     </button>
 
                     <button
@@ -977,7 +1058,7 @@ export default function Cards({ onNavigate }) {
                   }}>
                     <thead>
                       <tr style={{ backgroundColor: 'var(--primary-light)', borderBottom: '1px solid var(--border-color)' }}>
-                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>אזור</th>
+                        <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>לינק</th>
                         <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>מיועד עבור</th>
                         <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>תיאור</th>
                         <th style={{ padding: '14px 18px', fontWeight: '800', color: 'var(--primary-dark)', fontSize: '14px' }}>קישור</th>
@@ -1055,8 +1136,8 @@ export default function Cards({ onNavigate }) {
                               <button
                                 onClick={() => handleDuplicateArea(card)}
                                 className="admin-icon-button"
-                                title="שכפול אזור"
-                                aria-label={`שכפול אזור ${card.area_name}`}
+                                title="שכפול לינק"
+                                aria-label={`שכפול לינק ${card.area_name}`}
                                 disabled={opLoading}
                               >
                                 <Copy size={15} />
@@ -1065,8 +1146,8 @@ export default function Cards({ onNavigate }) {
                               <button
                                 onClick={() => handleDeleteArea(card)}
                                 className="admin-icon-button admin-icon-button-danger"
-                                title="מחיקת אזור"
-                                aria-label={`מחיקת אזור ${card.area_name}`}
+                                title="מחיקת לינק"
+                                aria-label={`מחיקת לינק ${card.area_name}`}
                                 disabled={opLoading}
                               >
                                 <Trash2 size={15} />
