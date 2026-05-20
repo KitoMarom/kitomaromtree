@@ -53,6 +53,7 @@ function App() {
       return;
     }
 
+    setAuthLoading(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
