@@ -30,11 +30,14 @@ export default function Footer({ settings }) {
           </div>
           
           <div>
-            <h3 style={{ color: 'white', marginBottom: '16px', fontSize: '20px' }}>צרו קשר</h3>
-            <ul style={{ listStyle: 'none', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li>טלפון במשרד: {phone}</li>
+            <h3 style={{ color: 'white', marginBottom: '16px', fontSize: '20px' }}>פרטי התקשרות</h3>
+            <ul style={{ listStyle: 'none', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '8px', padding: 0 }}>
+              <li style={{ color: 'white', fontWeight: 'bold' }}>קיטו מרום הדרכה טכנולוגית בע"מ</li>
+              <li>מתחם INTRO, רחוב האורזים 2 נתניה.</li>
+              <li>מען למכתבים: ת.ד. 2356, נתניה 42120</li>
+              <li>טלפון: <a href="tel:09-8344840" style={{ color: 'var(--primary-light)' }}>09-8344840</a></li>
+              <li>פקס: 09-8344841</li>
               <li>אימייל: <a href={`mailto:${email}`} style={{ color: 'var(--primary-light)' }}>{email}</a></li>
-              <li>שעות פעילות: א׳-ה׳ 08:30 - 16:30</li>
             </ul>
           </div>
 
