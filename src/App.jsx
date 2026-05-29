@@ -182,6 +182,8 @@ function App() {
     }
   };
 
+  const isPublicRoute = path === '/' || path.startsWith('/registration/');
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -192,7 +194,7 @@ function App() {
       refreshProfile
     }}>
       {renderRoute()}
-      <CookieConsent />
+      {isPublicRoute && <CookieConsent />}
     </AuthContext.Provider>
   );
 }
