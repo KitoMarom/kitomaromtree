@@ -10,6 +10,7 @@ import Settings from './pages/admin/Settings';
 import Cards from './pages/admin/Cards';
 import Users from './pages/admin/Users';
 import NotFound from './pages/NotFound';
+import CookieConsent from './components/CookieConsent';
 
 // Import Guard
 import ProtectedRoute from './components/ProtectedRoute';
@@ -191,6 +192,7 @@ function App() {
       refreshProfile
     }}>
       {renderRoute()}
+      <CookieConsent />
     </AuthContext.Provider>
   );
 }
