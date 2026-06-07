@@ -1,19 +1,15 @@
 import { useState } from 'react';
 
-const CONSENT_STORAGE_KEY = 'kito-cookie-consent-v1';
 const PRIVACY_POLICY_URL = 'https://www.kitomarom.co.il/privacy-policy';
 
 export default function CookieConsent() {
-  const [hasAccepted, setHasAccepted] = useState(() => (
-    window.localStorage.getItem(CONSENT_STORAGE_KEY) === 'accepted'
-  ));
+  const [isDismissed, setIsDismissed] = useState(false);
 
   function acceptCookies() {
-    window.localStorage.setItem(CONSENT_STORAGE_KEY, 'accepted');
-    setHasAccepted(true);
+    setIsDismissed(true);
   }
 
-  if (hasAccepted) {
+  if (isDismissed) {
     return null;
   }
 
