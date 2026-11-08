@@ -11,8 +11,8 @@ export default function AccessibilityWidget() {
     window.OpenNagishConfig = {
       lang: 'he',
       position: 'bottom-left',
-      bottomOffset: 32,
-      mobileBottomOffset: 24
+      bottomOffset: 55,
+      mobileBottomOffset: 45
     };
 
     let script = document.getElementById('open-nagish-script');
@@ -22,8 +22,8 @@ export default function AccessibilityWidget() {
         window.OpenNagish.init({
           lang: 'he',
           position: 'bottom-left',
-          bottomOffset: 32,
-          mobileBottomOffset: 24
+          bottomOffset: 55,
+          mobileBottomOffset: 45
         });
       }
     }
