@@ -427,3 +427,61 @@ a {
     padding: 64px 15px calc(110px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* NagishLi Accessibility Button Styling - Circular Floating Icon */
+nagishli#NagishLiTag > #NagishLiBar {
+  bottom: 24px !important;
+  left: 24px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 99999 !important;
+}
+
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiBarStrip {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  background: var(--primary-color, #337AB7) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  border: 2px solid #ffffff !important;
+}
+
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiBarStrip:hover {
+  transform: scale(1.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiBarStrip > #NagishLiLogo {
+  margin: 0 !important;
+  width: 26px !important;
+  height: 26px !important;
+  background-size: cover !important;
+  filter: brightness(0) invert(1) !important; /* Make icon clean white */
+}
+
+/* When the menu is open, expand BarStrip naturally */
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiBarStrip.open {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 12px !important;
+  justify-content: space-between !important;
+  background: #1e293b !important;
+  border: none !important;
+}
+
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiBarStrip.open > #NagishLiLogo {
+  filter: none !important;
+}
+
+nagishli#NagishLiTag > #NagishLiBar > #NagishLiMenus {
+  border-radius: 0 0 8px 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
