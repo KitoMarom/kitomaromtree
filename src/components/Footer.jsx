@@ -10,7 +10,7 @@ export default function Footer({ settings }) {
     <footer style={{
       backgroundColor: 'var(--primary-dark)',
       color: 'white',
-      padding: '40px 0 35px',
+      padding: '40px 0 20px',
       borderTop: '5px solid var(--accent-gold)',
       fontSize: '15px'
     }}>
@@ -59,8 +59,7 @@ export default function Footer({ settings }) {
           flexWrap: 'wrap',
           gap: '12px',
           color: '#94a3b8',
-          fontSize: '13px',
-          paddingLeft: '75px' /* Keep clear space for the accessibility floating icon on bottom-left */
+          fontSize: '13px'
         }}>
           <span>{footerText}</span>
           <span style={{ direction: 'ltr' }}>Powered by Kito Marom Links © {new Date().getFullYear()}</span>

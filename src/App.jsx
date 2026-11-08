@@ -11,6 +11,7 @@ import Cards from './pages/admin/Cards';
 import Users from './pages/admin/Users';
 import NotFound from './pages/NotFound';
 import CookieConsent from './components/CookieConsent';
+import AccessibilityWidget from './components/AccessibilityWidget';
 
 // Import Guard
 import ProtectedRoute from './components/ProtectedRoute';
@@ -195,6 +196,7 @@ function App() {
     }}>
       {renderRoute()}
       {isPublicRoute && <CookieConsent />}
+      {isPublicRoute && <AccessibilityWidget />}
     </AuthContext.Provider>
   );
 }
